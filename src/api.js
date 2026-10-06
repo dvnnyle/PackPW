@@ -33,9 +33,10 @@ export function setApiLocation(id) {
   currentLocation = id;
 }
 
-async function getJson(rawPath, fresh = false, onCached) {
+// `location` overrides the global one (Oversikt shows every location side by side in its pager).
+async function getJson(rawPath, fresh = false, onCached, location = currentLocation) {
   const general = rawPath.startsWith('/api/health') || rawPath.startsWith('/api/app-version');
-  const path = general ? rawPath : `${rawPath}${rawPath.includes('?') ? '&' : '?'}location=${currentLocation}`;
+  const path = general ? rawPath : `${rawPath}${rawPath.includes('?') ? '&' : '?'}location=${location}`;
   if (onCached && !fresh) {
     const saved = readCache(path);
     if (saved !== undefined) onCached(saved);
@@ -52,18 +53,18 @@ async function getJson(rawPath, fresh = false, onCached) {
 }
 
 // date: "YYYY-MM-DD" (Extanda Go + NordPay numbers for that day)
-export function fetchDashboard(date, fresh, onCached) {
-  return getJson(`/api/dashboard?date=${date}`, fresh, onCached);
+export function fetchDashboard(date, fresh, onCached, location) {
+  return getJson(`/api/dashboard?date=${date}`, fresh, onCached, location);
 }
 
 // date: "YYYY-MM-DD"
-export function fetchBookings(date, fresh, onCached) {
-  return getJson(`/api/bookings?date=${date}`, fresh, onCached);
+export function fetchBookings(date, fresh, onCached, location) {
+  return getJson(`/api/bookings?date=${date}`, fresh, onCached, location);
 }
 
 // The first day on or after `from` that has bookings → { date: "YYYY-MM-DD" | null }
-export function fetchNextBookingDay(from) {
-  return getJson(`/api/bookings/next?from=${from}`);
+export function fetchNextBookingDay(from, location) {
+  return getJson(`/api/bookings/next?from=${from}`, false, undefined, location);
 }
 
 // Sales per opening hour on `date` (YYYY-MM-DD) for both locations → { date, hours: [{ hour, extandaGo, nordpay }], ... }
@@ -77,13 +78,13 @@ export function fetchUpcomingBookings(from, fresh, count = 10, onCached) {
 }
 
 // Current weather + next 12 hours at Playworld Sørlandet (MET Norway / yr.no)
-export function fetchWeather(onCached) {
-  return getJson('/api/weather', false, onCached);
+export function fetchWeather(onCached, location) {
+  return getJson('/api/weather', false, onCached, location);
 }
 
 // Who is working on `date` (YYYY-MM-DD), from Planday → { date, shifts: [{ name, group, start, end, status, punchIn, punchOut }] }
-export function fetchStaff(date, fresh, onCached) {
-  return getJson(`/api/staff?date=${date}`, fresh, onCached);
+export function fetchStaff(date, fresh, onCached, location) {
+  return getJson(`/api/staff?date=${date}`, fresh, onCached, location);
 }
 
 // Latest released Android build → { version, versionCode, apkUrl, mandatory, releaseNotes }

@@ -7,6 +7,7 @@ import { SkeletonCard } from './Skeleton';
 import DateFilter from './DateFilter';
 import PageHeader from './PageHeader';
 import { useRefresh } from '../refresh';
+import { useLocation } from '../location';
 import { BookingRow } from './DashboardScreen';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -61,6 +62,7 @@ export default function BookingerScreen() {
   const [result, setResult] = useState(null); // { from, days, noMore }
   const [error, setError] = useState(null);
   const { refreshing, refreshKey, refreshAll, finishRefresh } = useRefresh();
+  const { location } = useLocation();
   const [loadingMore, setLoadingMore] = useState(false);
   const latestFrom = useRef(from);
   const shownCount = useRef(PAGE_SIZE);
@@ -72,17 +74,22 @@ export default function BookingerScreen() {
     try {
       const { days } = await fetchUpcomingBookings(forFrom, fresh, count, (saved) => {
         if (latestFrom.current !== forFrom) return;
-        setResult((r) => (r?.from === forFrom ? r : { from: forFrom, days: saved.days, noMore: saved.days.length < count }));
+        setResult((r) =>
+          r?.from === forFrom && r.location === location.id
+            ? r
+            : { from: forFrom, location: location.id, days: saved.days, noMore: saved.days.length < count },
+        );
       });
       if (latestFrom.current !== forFrom) return;
       setError(null);
-      setResult({ from: forFrom, days, noMore: days.length < count });
+      setResult({ from: forFrom, location: location.id, days, noMore: days.length < count });
     } catch (err) {
       if (latestFrom.current === forFrom) setError(err.message);
     } finally {
       finishRefresh();
     }
-  }, [finishRefresh]);
+    // location.id: a new load function per location, so the effect reloads when the location changes.
+  }, [finishRefresh, location.id]);
 
   useEffect(() => {
     shownCount.current = PAGE_SIZE;
@@ -116,7 +123,7 @@ export default function BookingerScreen() {
   }, [refreshKey, from, load]);
   const onRefresh = refreshAll;
 
-  const current = result?.from === from ? result : null;
+  const current = result?.from === from && result.location === location.id ? result : null;
   const rooms = [...new Set(current?.days.flatMap((d) => d.bookings.map(roomOf)) ?? [])].sort();
   // Apply the room filter; days left without bookings are hidden.
   const days =

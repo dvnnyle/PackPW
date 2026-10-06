@@ -5,7 +5,7 @@ import { cardShadow, colors, fonts } from '../theme';
 import { toDateString } from '../format';
 import DateFilter from './DateFilter';
 import { logos } from '../logos';
-import { useLocation } from '../location';
+import { LOCATIONS } from '../location';
 import { SkeletonBlock } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 10 * 60_000;
@@ -46,8 +46,8 @@ const temp = (t) => `${Math.round(t)}°`;
 
 // Weather at Playworld Sørlandet. Today: now + the next 12 hours. Other days (up to MET's ~9-day
 // forecast): midday weather, high/low, and that day's steps.
-export default function WeatherWidget({ refreshKey }) {
-  const { location } = useLocation();
+export default function WeatherWidget({ refreshKey, locationId }) {
+  const location = LOCATIONS.find((l) => l.id === locationId) ?? LOCATIONS[0];
   const today = toDateString(new Date());
   const [date, setDate] = useState(today);
   const [data, setData] = useState(null);
@@ -55,13 +55,13 @@ export default function WeatherWidget({ refreshKey }) {
 
   useEffect(() => {
     const load = () =>
-      fetchWeather((saved) => setData((d) => d ?? saved))
+      fetchWeather((saved) => setData((d) => d ?? saved), locationId)
         .then((d) => (setData(d), setFailed(false)))
         .catch(() => setFailed(true));
     load();
     const timer = setInterval(load, REFRESH_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [refreshKey]);
+  }, [refreshKey, locationId]);
 
   const steps = data ? [data.now, ...data.hours] : [];
   const lastDay = steps.length ? dayOf(steps[steps.length - 1].time) : today;

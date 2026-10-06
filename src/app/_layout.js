@@ -52,8 +52,8 @@ function NavButton({ tab, desktop, isFocused, ...props }) {
   );
 }
 
-// The screens, rebuilt when the location changes so every page loads that location's data. Demo locations get
-// a yellow strip so made-up numbers are never mistaken for real ones.
+// The screens (each follows the chosen location itself). Demo locations get a yellow strip so made-up numbers
+// are never mistaken for real ones.
 function LocationContent() {
   const { location } = useLocation();
   return (
@@ -63,7 +63,7 @@ function LocationContent() {
           <Text style={styles.demoText}>Demodata – Playworld {location.name} er ikke koblet til ennå</Text>
         </View>
       ) : null}
-      <TabSlot key={location.id} style={styles.slot} />
+      <TabSlot style={styles.slot} />
     </>
   );
 }
@@ -103,7 +103,7 @@ export default function RootLayout() {
 
   // Visible menu. Its triggers have no href: they switch to the tabs registered in the hidden TabList below.
   const menu = (
-    <View style={desktop ? styles.sidebar : [styles.bottomBar, { paddingBottom: insets.bottom + 6 }]}>
+    <View style={desktop ? styles.sidebar : [styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
       {desktop ? <Image source={logo} style={styles.sidebarLogo} resizeMode="contain" /> : null}
       {desktop ? (
         <View style={styles.sidebarLocation}>
@@ -193,9 +193,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
-    paddingTop: 6,
+    paddingTop: 10,
   },
-  bottomItem: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 4 },
+  bottomItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 4 },
   bottomLabel: { fontFamily: fonts.medium, fontSize: 11 },
 
   sidebar: {

@@ -7,6 +7,7 @@ import DateFilter from './DateFilter';
 import PageHeader from './PageHeader';
 import TopSellersCard from './TopSellersCard';
 import { useRefresh } from '../refresh';
+import { useLocation } from '../location';
 import { SkeletonCard } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -105,24 +106,27 @@ export default function StatistikkScreen() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const { refreshing, refreshKey, refreshAll, finishRefresh } = useRefresh();
+  const { location } = useLocation();
   const latestDate = useRef(date);
 
   const load = useCallback(async (forDate, fresh) => {
     latestDate.current = forDate;
     try {
       const result = await fetchHourlySales(forDate, fresh, (saved) => {
-        if (latestDate.current === forDate) setData((d) => (d?.date === forDate ? d : saved));
+        if (latestDate.current === forDate)
+          setData((d) => (d?.date === forDate && d.location === location.id ? d : { ...saved, location: location.id }));
       });
       // Ignore slow responses for a date the user has already moved away from.
       if (latestDate.current !== forDate) return;
       setError(null);
-      setData(result);
+      setData({ ...result, location: location.id });
     } catch (err) {
       if (latestDate.current === forDate) setError(err.message);
     } finally {
       finishRefresh();
     }
-  }, [finishRefresh]);
+    // location.id: a new load function per location, so the effect below reloads when the location changes.
+  }, [finishRefresh, location.id]);
 
   useEffect(() => {
     load(date);
@@ -144,7 +148,8 @@ export default function StatistikkScreen() {
   const onRefresh = refreshAll;
 
   const isToday = date === today;
-  const current = data?.date === date ? data : null;
+  // Only show data for the chosen day and location (each response is tagged with the location it was for).
+  const current = data?.date === date && data.location === location.id ? data : null;
   const hours = current?.hours ?? [];
   const total = hours.reduce((sum, h) => sum + hourTotal(h), 0);
   const best = hours.reduce((a, h) => (a == null || hourTotal(h) > hourTotal(a) ? h : a), null);

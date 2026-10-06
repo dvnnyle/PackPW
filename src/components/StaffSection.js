@@ -38,7 +38,7 @@ function ShiftRow({ shift }) {
 }
 
 // Who is working on a chosen day (today by default), from Planday.
-export default function StaffSection({ refreshKey }) {
+export default function StaffSection({ refreshKey, locationId }) {
   const today = toDateString(new Date());
   const [date, setDate] = useState(today);
   const [result, setResult] = useState(null); // { date, shifts }
@@ -48,7 +48,7 @@ export default function StaffSection({ refreshKey }) {
   const seenRefreshKey = useRef(refreshKey);
   useEffect(() => {
     const load = (fresh) =>
-      fetchStaff(date, fresh, (saved) => setResult((r) => (r?.date === date ? r : saved)))
+      fetchStaff(date, fresh, (saved) => setResult((r) => (r?.date === date ? r : saved)), locationId)
         .then((d) => (setResult(d), setFailed(false)))
         .catch(() => setFailed(true));
     setFailed(false);
@@ -56,7 +56,7 @@ export default function StaffSection({ refreshKey }) {
     seenRefreshKey.current = refreshKey;
     const timer = setInterval(() => load(false), REFRESH_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [date, refreshKey]);
+  }, [date, refreshKey, locationId]);
 
   // Only show data for the chosen day; a slow response for a previous day is ignored.
   const shifts = result?.date === date ? result.shifts : null;

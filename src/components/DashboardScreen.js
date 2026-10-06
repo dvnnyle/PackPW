@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   Image,
-  PanResponder,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -136,7 +135,7 @@ function dayDiff(a, b) {
 }
 
 // Bookings for a chosen day, with ‹ › buttons like FunButler's date bar.
-function BookingsSection({ refreshKey }) {
+function BookingsSection({ refreshKey, locationId }) {
   const today = toDateString(new Date());
   const [date, setDate] = useState(today);
   const [result, setResult] = useState(null);
@@ -149,7 +148,7 @@ function BookingsSection({ refreshKey }) {
   const goToNextBookingDay = async () => {
     setNextState('searching');
     try {
-      const { date: next } = await fetchNextBookingDay(addDays(date, 1));
+      const { date: next } = await fetchNextBookingDay(addDays(date, 1), locationId);
       if (next) {
         setNextState(null);
         setDate(next);
@@ -168,9 +167,14 @@ function BookingsSection({ refreshKey }) {
     latestDate.current = forDate;
     setLoading(true);
     try {
-      const data = await fetchBookings(forDate, fresh, (saved) => {
-        if (latestDate.current === forDate) setResult((r) => (r?.date === forDate ? r : saved));
-      });
+      const data = await fetchBookings(
+        forDate,
+        fresh,
+        (saved) => {
+          if (latestDate.current === forDate) setResult((r) => (r?.date === forDate ? r : saved));
+        },
+        locationId,
+      );
       // Ignore slow responses for a date the user has already moved away from.
       if (latestDate.current !== forDate) return;
       setResult(data);
@@ -180,7 +184,7 @@ function BookingsSection({ refreshKey }) {
     } finally {
       if (latestDate.current === forDate) setLoading(false);
     }
-  }, []);
+  }, [locationId]);
 
   // A changed refreshKey means the user pressed refresh: skip the backend cache for that load.
   const seenRefreshKey = useRef(refreshKey);
@@ -260,7 +264,8 @@ function BookingsSection({ refreshKey }) {
   );
 }
 
-export default function DashboardScreen() {
+// Oversikt for one location (a page in the pager below).
+function OversiktPage({ locationId }) {
   const today = toDateString(new Date());
   // The date filter only drives the two sales sections; FunButler has its own day bar.
   const [date, setDate] = useState(today);
@@ -273,9 +278,14 @@ export default function DashboardScreen() {
   const load = useCallback(async (forDate, fresh) => {
     latestDate.current = forDate;
     try {
-      const result = await fetchDashboard(forDate, fresh, (saved) => {
-        if (latestDate.current === forDate) setData((d) => (d?.date === forDate ? d : saved));
-      });
+      const result = await fetchDashboard(
+        forDate,
+        fresh,
+        (saved) => {
+          if (latestDate.current === forDate) setData((d) => (d?.date === forDate ? d : saved));
+        },
+        locationId,
+      );
       // Ignore slow responses for a date the user has already moved away from.
       if (latestDate.current !== forDate) return;
       setError(null);
@@ -285,18 +295,18 @@ export default function DashboardScreen() {
     } finally {
       finishRefresh();
     }
-  }, [finishRefresh]);
+  }, [finishRefresh, locationId]);
 
   // Load now, then refresh every minute (the backend caches for 60 s anyway).
   useEffect(() => {
     load(date);
     // Fetch the day before and after in the background (saved on the device), so ‹ › show data instantly.
     for (const day of [addDays(date, -1), addDays(date, 1)]) {
-      if (day <= today) fetchDashboard(day, false, () => {}).catch(() => {});
+      if (day <= today) fetchDashboard(day, false, () => {}, locationId).catch(() => {});
     }
     const timer = setInterval(() => load(date), REFRESH_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [date, load, today]);
+  }, [date, load, today, locationId]);
 
   // A global reload: new data straight from the sites (the sections react to refreshKey themselves).
   const seenRefreshKey = useRef(refreshKey);
@@ -307,40 +317,6 @@ export default function DashboardScreen() {
   }, [refreshKey, date, load]);
   const onRefresh = refreshAll;
 
-  // Swipe left/right anywhere on Oversikt to go to the next/previous location (the same global choice as the
-  // picker). The page follows the finger a little; horizontal swipes only, so vertical scrolling and the
-  // weather strip's own horizontal scroll keep working.
-  const { location, setLocationId } = useLocation();
-  const [dragX] = useState(() => new Animated.Value(0));
-  const swipe = useMemo(() => {
-    const locations = LOCATIONS.filter((l) => l.available);
-    const index = locations.findIndex((l) => l.id === location.id);
-    const settle = () => Animated.spring(dragX, { toValue: 0, useNativeDriver: true }).start();
-    return PanResponder.create({
-      // Capture phase: a clearly horizontal drag is claimed before the cards inside can take it.
-      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
-      // Keep the gesture once it has started horizontally (the page's scroll view asks to take it over).
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderMove: (_, g) => {
-        // Resist at the ends (no location beyond the first/last).
-        const atEdge = (g.dx > 0 && index === 0) || (g.dx < 0 && index === locations.length - 1);
-        dragX.setValue(g.dx * (atEdge ? 0.15 : 0.5));
-      },
-      onPanResponderRelease: (_, g) => {
-        const next = g.dx < -80 ? index + 1 : g.dx > 80 ? index - 1 : index;
-        if (next === index || !locations[next]) return settle();
-        // Slide the page out first and switch afterwards: switching while the gesture is still being released
-        // rebuilds the screen under it and leaves the touch system stuck.
-        Animated.timing(dragX, { toValue: g.dx < 0 ? -400 : 400, duration: 140, useNativeDriver: true }).start(() =>
-          setTimeout(() => {
-            setLocationId(locations[next].id);
-            dragX.setValue(0);
-          }, 0),
-        );
-      },
-      onPanResponderTerminate: settle,
-    });
-  }, [dragX, location.id, setLocationId]);
 
   const isToday = date === today;
   const current = data?.date === date ? data : null;
@@ -353,9 +329,8 @@ export default function DashboardScreen() {
       : null;
 
   return (
-    <View style={styles.safe} {...swipe.panHandlers}>
-      <Animated.ScrollView
-        style={{ transform: [{ translateX: dragX }] }}
+    <View style={styles.safe}>
+      <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
@@ -434,12 +409,61 @@ export default function DashboardScreen() {
           </>
         )}
 
-        <BookingsSection refreshKey={refreshKey} />
+        <BookingsSection refreshKey={refreshKey} locationId={locationId} />
 
-        <WeatherWidget refreshKey={refreshKey} />
+        <WeatherWidget refreshKey={refreshKey} locationId={locationId} />
 
-        <StaffSection refreshKey={refreshKey} />
-      </Animated.ScrollView>
+        <StaffSection refreshKey={refreshKey} locationId={locationId} />
+      </ScrollView>
+    </View>
+  );
+}
+
+// Oversikt: one page per location side by side. Swiping uses the platform's own scrolling with page snapping
+// (smooth, follows the finger) and changes the global location; choosing in the picker scrolls to that page.
+// All pages stay loaded, so the next location's numbers are already there when you swipe.
+export default function DashboardScreen() {
+  const { location, setLocationId } = useLocation();
+  const locations = LOCATIONS.filter((l) => l.available);
+  const index = Math.max(0, locations.findIndex((l) => l.id === location.id));
+  const [size, setSize] = useState(null);
+  const pager = useRef(null);
+  const settleTimer = useRef(null);
+
+  // Follow the picker (and the first layout): show the chosen location's page.
+  useEffect(() => {
+    if (size) pager.current?.scrollTo({ x: index * size.width, animated: true });
+  }, [index, size]);
+
+  // When scrolling has settled on a page, make that the global location.
+  const onScroll = (e) => {
+    const x = e.nativeEvent.contentOffset.x;
+    clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      const page = locations[Math.round(x / size.width)];
+      if (page && page.id !== location.id) setLocationId(page.id);
+    }, 120);
+  };
+
+  return (
+    <View style={styles.safe} onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}>
+      {size ? (
+        <ScrollView
+          ref={pager}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={32}
+          onScroll={onScroll}
+          contentOffset={{ x: index * size.width, y: 0 }}
+        >
+          {locations.map((l) => (
+            <View key={l.id} style={{ width: size.width, height: size.height }}>
+              <OversiktPage locationId={l.id} />
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
