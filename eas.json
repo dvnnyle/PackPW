@@ -14,7 +14,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://playworld-backend-knjy.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://packpw.onrender.com"
       },
       "autoIncrement": true,
       "environment": "preview"
@@ -23,7 +23,7 @@
       "autoIncrement": true,
       "environment": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://playworld-backend-knjy.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://packpw.onrender.com"
       }
     }
   },
