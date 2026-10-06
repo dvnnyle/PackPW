@@ -12,6 +12,9 @@ export const config = {
   // Refresh today's data in the background every N minutes (0 = off). On by default when deployed
   // (API_KEY set), so the cache stays warm without an external cron job.
   warmupMinutes: Number(process.env.WARMUP_INTERVAL_MINUTES ?? (process.env.API_KEY ? 10 : 0)),
+  // Refresh today's sales figures (Oversikt + Statistikk) every N seconds so both pages show the same, at most
+  // a minute old, numbers. 0 = off.
+  liveRefreshSeconds: Number(process.env.LIVE_REFRESH_SECONDS ?? 60),
   cacheTtlMs: Number(process.env.CACHE_TTL_SECONDS ?? 60) * 1000,
   // How long browser steps (page loads, logins) may take. Generous because small servers (Render free: 0.1 CPU)
   // run Chromium very slowly.

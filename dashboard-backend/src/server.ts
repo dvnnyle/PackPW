@@ -107,6 +107,20 @@ const server = app.listen(config.port, () => {
       }).catch((err) => console.error('[warmup] Scheduled refresh failed:', err.message));
     }, config.warmupMinutes * 60_000);
   }
+
+  // Today's sales for Oversikt and Statistikk are refreshed together every minute (fresh=1 updates the cache),
+  // so the two pages show the same totals instead of drifting apart between their separate cache refreshes.
+  if (config.liveRefreshSeconds > 0) {
+    setInterval(() => {
+      const today = todayInNorway();
+      const headers = config.apiKey ? { 'x-api-key': config.apiKey } : undefined;
+      for (const path of [`/api/dashboard?date=${today}`, `/api/sales/hourly?date=${today}`]) {
+        fetch(`http://127.0.0.1:${config.port}${path}&fresh=1`, { headers }).catch((err) =>
+          console.error('[live] Refresh of today failed:', err.message),
+        );
+      }
+    }, config.liveRefreshSeconds * 1000);
+  }
 });
 
 async function shutdown() {

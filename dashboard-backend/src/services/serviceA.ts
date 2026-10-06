@@ -125,14 +125,14 @@ export async function getServiceATopSellers(date: string): Promise<{ name: strin
 }
 
 // Turnover in kr for each hour (0–23, Norwegian time) of `date`.
-// Wallmob's hourly breakdown lags behind: sales in the hour that is still running show up in the day total
-// right away but in the hourly figures only later. So the day total is fetched too, and for today the
-// difference is added to the current hour, keeping the chart's total equal to Oversikt's.
+// Wallmob's turnover report lags behind its performance report (which Oversikt uses): recent sales show up
+// there right away but in the turnover figures only later. So the performance day total is fetched too, and
+// for today the difference is added to the current hour, keeping the chart's total equal to Oversikt's.
 export async function getServiceAHourly(date: string): Promise<number[]> {
   type Row = { intervals_since_start: string; turnover: string };
   const [rows, day] = await Promise.all([
     apiGet<Row[]>(`/reports/turnover?${dayRange(date)}&interval_grouping=3600`),
-    apiGet<Row[]>(`/reports/turnover?${dayRange(date)}&interval_grouping=86400`),
+    performance(date, ['turnover']),
   ]);
 
   // turnover is in øre.
@@ -142,7 +142,7 @@ export async function getServiceAHourly(date: string): Promise<number[]> {
     if (hour >= 0 && hour < 24) hours[hour] += Number(row.turnover) / 100;
   }
 
-  const dayTotal = day.reduce((sum, row) => sum + Number(row.turnover), 0) / 100;
+  const dayTotal = (day.turnover ?? 0) / 100;
   const missing = Math.round((dayTotal - hours.reduce((a, b) => a + b, 0)) * 100) / 100;
   if (missing > 0 && date === todayInNorway()) {
     const currentHour = Number(
