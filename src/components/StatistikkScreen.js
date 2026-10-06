@@ -181,7 +181,7 @@ export default function StatistikkScreen() {
             <View style={styles.totalCard}>
               <Text style={styles.totalTitle}>{isToday ? 'Totalt salg i dag' : 'Totalt salg'}</Text>
               <Text style={styles.totalValue}>
-                {formatNumber(total)}
+                {formatNumber(total, 2)}
                 <Text style={styles.totalUnit}> kr</Text>
               </Text>
               {best && hourTotal(best) > 0 ? (
