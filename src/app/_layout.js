@@ -17,6 +17,8 @@ import { Syne_700Bold, Syne_800ExtraBold } from '@expo-google-fonts/syne';
 import { colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '../theme';
 import { canSelfUpdate, checkForUpdate } from '../updates';
 import UpdateDialog from '../components/UpdateDialog';
+import LocationPicker from '../components/LocationPicker';
+import { LocationProvider } from '../location';
 
 // Keep the splash screen up until the fonts are loaded.
 SplashScreen.preventAutoHideAsync();
@@ -85,6 +87,11 @@ export default function RootLayout() {
   const menu = (
     <View style={desktop ? styles.sidebar : [styles.bottomBar, { paddingBottom: insets.bottom + 6 }]}>
       {desktop ? <Image source={logo} style={styles.sidebarLogo} resizeMode="contain" /> : null}
+      {desktop ? (
+        <View style={styles.sidebarLocation}>
+          <LocationPicker />
+        </View>
+      ) : null}
       {TABS.map((tab) => (
         <TabTrigger key={tab.name} name={tab.name} asChild>
           <NavButton tab={tab} desktop={desktop} />
@@ -94,33 +101,36 @@ export default function RootLayout() {
   );
 
   return (
-    <Tabs style={styles.root}>
-      {/* Expo Router needs the TabList as a direct child of Tabs to register the routes;
-          it's hidden so the menu can be laid out differently on desktop and mobile. */}
-      <TabList style={styles.hidden}>
-        {TABS.map((tab) => (
-          <TabTrigger key={tab.name} name={tab.name} href={tab.href} />
-        ))}
-      </TabList>
-      <StatusBar style="dark" />
-      <UpdateDialog update={update} onClose={() => setUpdate(null)} />
-      {/* Desktop: sidebar | content.  Mobile: logo bar / content / bottom tab bar. */}
-      <View style={[styles.frame, desktop && styles.frameDesktop]}>
-        {desktop ? null : (
-          <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-            <Image source={logo} style={styles.topBarLogo} resizeMode="contain" />
+    <LocationProvider>
+      <Tabs style={styles.root}>
+        {/* Expo Router needs the TabList as a direct child of Tabs to register the routes;
+            it's hidden so the menu can be laid out differently on desktop and mobile. */}
+        <TabList style={styles.hidden}>
+          {TABS.map((tab) => (
+            <TabTrigger key={tab.name} name={tab.name} href={tab.href} />
+          ))}
+        </TabList>
+        <StatusBar style="dark" />
+        <UpdateDialog update={update} onClose={() => setUpdate(null)} />
+        {/* Desktop: sidebar | content.  Mobile: logo bar / content / bottom tab bar. */}
+        <View style={[styles.frame, desktop && styles.frameDesktop]}>
+          {desktop ? null : (
+            <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+              <Image source={logo} style={styles.topBarLogo} resizeMode="contain" />
+              <LocationPicker />
+            </View>
+          )}
+
+          {desktop ? menu : null}
+
+          <View style={styles.content}>
+            <TabSlot style={styles.slot} />
           </View>
-        )}
 
-        {desktop ? menu : null}
-
-        <View style={styles.content}>
-          <TabSlot style={styles.slot} />
+          {desktop ? null : menu}
         </View>
-
-        {desktop ? null : menu}
-      </View>
-    </Tabs>
+      </Tabs>
+    </LocationProvider>
   );
 }
 
@@ -137,12 +147,14 @@ const styles = StyleSheet.create({
 
   topBar: {
     alignItems: 'center',
+    gap: 4,
     paddingBottom: 8,
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   topBarLogo: { width: 90, height: 40 },
+  sidebarLocation: { marginBottom: 16 },
 
   bottomBar: {
     flexDirection: 'row',
