@@ -116,8 +116,13 @@ export default function RootLayout() {
         <View style={[styles.frame, desktop && styles.frameDesktop]}>
           {desktop ? null : (
             <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-              <Image source={logo} style={styles.topBarLogo} resizeMode="contain" />
-              <LocationPicker />
+              {/* Picker on the left, logo centred over the full width. */}
+              <View style={styles.topBarRow}>
+                <Image source={logo} style={styles.topBarLogo} resizeMode="contain" />
+                <View style={styles.topBarLeft}>
+                  <LocationPicker />
+                </View>
+              </View>
             </View>
           )}
 
@@ -146,14 +151,14 @@ const styles = StyleSheet.create({
   slot: { flexShrink: 1, flexBasis: 0, minHeight: 0 },
 
   topBar: {
-    alignItems: 'center',
-    gap: 4,
     paddingBottom: 8,
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  topBarRow: { height: 40, justifyContent: 'center', alignItems: 'center' },
   topBarLogo: { width: 90, height: 40 },
+  topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },
   sidebarLocation: { marginBottom: 16 },
 
   bottomBar: {
