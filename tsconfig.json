@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {},
+  "extends": "expo/tsconfig.base",
+  "exclude": [
+    "dashboard-backend",
+    "node_modules"
+  ]
+}

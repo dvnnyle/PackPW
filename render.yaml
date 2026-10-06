@@ -1,0 +1,75 @@
+# Render Blueprint for the backend (Dashboard → New → Blueprint → pick this repo).
+# Secrets are NOT in this file: Render asks for every "sync: false" value when the blueprint is created.
+services:
+  - type: web
+    name: playworld-backend
+    # Plain Node runtime (no Docker). Chromium is downloaded during the build into node_modules
+    # (PLAYWRIGHT_BROWSERS_PATH=0) so it is still there when the service runs.
+    # Plan B if Chromium can't start here: switch to `runtime: docker` with dashboard-backend/Dockerfile.
+    # The build also exports the Expo app for the web into dashboard-backend/web; the backend serves it
+    # (behind the WEB_PASSWORD browser login) from the same address as the API.
+    runtime: node
+    rootDir: .
+    buildCommand: >-
+      npm ci && npx expo export --platform web --output-dir dashboard-backend/web &&
+      cd dashboard-backend && npm ci && npx playwright install --only-shell chromium
+    startCommand: cd dashboard-backend && npm start
+    region: frankfurt
+    # Free plan: 512 MB, 0.1 CPU, sleeps after 15 minutes without requests. Starter (paid) gives 5x the CPU.
+    plan: free
+    healthCheckPath: /api/health
+    # Redeploy only when the backend or the web app changes. Publishing a new app version (app-version.json,
+    # read live from GitHub) and the helper scripts don't restart the service.
+    buildFilter:
+      paths:
+        - dashboard-backend/**
+        - src/**
+        - assets/**
+        - app.json
+        - package.json
+        - package-lock.json
+      ignoredPaths:
+        - dashboard-backend/app-version.json
+        - dashboard-backend/scripts/**
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: "0"
+      - key: HEADLESS
+        value: "true"
+      - key: TZ
+        value: Europe/Oslo
+      - key: API_KEY
+        generateValue: true
+      # Website login (browser login box). Username defaults to "playworld"; the website stays offline without a password.
+      - key: WEB_PASSWORD
+        sync: false
+      - key: APP_VERSION_URL
+        value: https://raw.githubusercontent.com/dvnnyle/PackPW/main/dashboard-backend/app-version.json
+      - key: CACHE_TTL_SECONDS
+        value: "60"
+      - key: SERVICE_A_URL
+        value: https://wbo-etail.wallmob.com
+      - key: SERVICE_A_USERNAME
+        sync: false
+      - key: SERVICE_A_PASSWORD
+        sync: false
+      - key: SERVICE_B_URL
+        value: https://admin.nordpay.no
+      - key: SERVICE_B_USERNAME
+        sync: false
+      - key: SERVICE_B_PASSWORD
+        sync: false
+      - key: FUNBUTLER_URL
+        value: https://booking.funbutler.com
+      - key: FUNBUTLER_USERNAME
+        sync: false
+      - key: FUNBUTLER_PASSWORD
+        sync: false
+      - key: PLANDAY_URL
+        value: https://playworld.planday.com
+      - key: PLANDAY_USERNAME
+        sync: false
+      - key: PLANDAY_PASSWORD
+        sync: false
