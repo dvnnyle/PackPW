@@ -6,6 +6,7 @@ import { addDays, DAYS, MONTHS, parseDate, toDateString } from '../format';
 import { SkeletonCard } from './Skeleton';
 import DateFilter from './DateFilter';
 import PageHeader from './PageHeader';
+import { useRefresh } from '../refresh';
 import { BookingRow } from './DashboardScreen';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -59,7 +60,7 @@ export default function BookingerScreen() {
   const [room, setRoom] = useState(null); // null = all rooms
   const [result, setResult] = useState(null); // { from, days, noMore }
   const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const { refreshing, refreshKey, refreshAll, finishRefresh } = useRefresh();
   const [loadingMore, setLoadingMore] = useState(false);
   const latestFrom = useRef(from);
   const shownCount = useRef(PAGE_SIZE);
@@ -79,9 +80,9 @@ export default function BookingerScreen() {
     } catch (err) {
       if (latestFrom.current === forFrom) setError(err.message);
     } finally {
-      setRefreshing(false);
+      finishRefresh();
     }
-  }, []);
+  }, [finishRefresh]);
 
   useEffect(() => {
     shownCount.current = PAGE_SIZE;
@@ -106,11 +107,14 @@ export default function BookingerScreen() {
     }
   };
 
-  // Refresh button / pull to refresh: new data straight from FunButler.
-  const onRefresh = () => {
-    setRefreshing(true);
+  // A global reload (top bar button or pull to refresh): new data straight from FunButler.
+  const seenRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (seenRefreshKey.current === refreshKey) return;
+    seenRefreshKey.current = refreshKey;
     load(from, true);
-  };
+  }, [refreshKey, from, load]);
+  const onRefresh = refreshAll;
 
   const current = result?.from === from ? result : null;
   const rooms = [...new Set(current?.days.flatMap((d) => d.bookings.map(roomOf)) ?? [])].sort();
@@ -134,12 +138,12 @@ export default function BookingerScreen() {
           }
           icon="calendar-outline"
           accent={colors.funbutler}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-        />
+        >
+          <DateFilter date={from} onChange={(d) => (setFrom(d), setRoom(null))} />
+        </PageHeader>
 
         {/* Filters: start date, then one chip per room found in the loaded bookings. */}
-        <DateFilter date={from} onChange={(d) => (setFrom(d), setRoom(null))} />
+
         {rooms.length > 1 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             <Chip label="Alle" active={!room} onPress={() => setRoom(null)} />

@@ -19,6 +19,8 @@ import { canSelfUpdate, checkForUpdate } from '../updates';
 import UpdateDialog from '../components/UpdateDialog';
 import LocationPicker from '../components/LocationPicker';
 import { LocationProvider, useLocation } from '../location';
+import { RefreshProvider } from '../refresh';
+import RefreshButton from '../components/RefreshButton';
 
 // Keep the splash screen up until the fonts are loaded.
 SplashScreen.preventAutoHideAsync();
@@ -106,6 +108,7 @@ export default function RootLayout() {
       {desktop ? (
         <View style={styles.sidebarLocation}>
           <LocationPicker />
+          <RefreshButton />
         </View>
       ) : null}
       {TABS.map((tab) => (
@@ -118,6 +121,7 @@ export default function RootLayout() {
 
   return (
     <LocationProvider>
+    <RefreshProvider>
       <Tabs style={styles.root}>
         {/* Expo Router needs the TabList as a direct child of Tabs to register the routes;
             it's hidden so the menu can be laid out differently on desktop and mobile. */}
@@ -138,6 +142,9 @@ export default function RootLayout() {
                 <View style={styles.topBarLeft}>
                   <LocationPicker />
                 </View>
+                <View style={styles.topBarRight}>
+                  <RefreshButton />
+                </View>
               </View>
             </View>
           )}
@@ -151,6 +158,7 @@ export default function RootLayout() {
           {desktop ? null : menu}
         </View>
       </Tabs>
+    </RefreshProvider>
     </LocationProvider>
   );
 }
@@ -177,7 +185,8 @@ const styles = StyleSheet.create({
   topBarRow: { height: 52, justifyContent: 'center', alignItems: 'center' },
   topBarLogo: { width: 110, height: 48 },
   topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },
-  sidebarLocation: { marginBottom: 16 },
+  topBarRight: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
+  sidebarLocation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
 
   bottomBar: {
     flexDirection: 'row',

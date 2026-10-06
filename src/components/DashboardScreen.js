@@ -21,6 +21,7 @@ import BookingModal from './BookingModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { logos } from '../logos';
 import { LOCATIONS, useLocation } from '../location';
+import { useRefresh } from '../refresh';
 import { SkeletonCard, SkeletonRows } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -265,8 +266,8 @@ export default function DashboardScreen() {
   const [date, setDate] = useState(today);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  // Global reload (top bar button or pull to refresh): sections get the same refreshKey.
+  const { refreshing, refreshKey, refreshAll, finishRefresh } = useRefresh();
   const latestDate = useRef(date);
 
   const load = useCallback(async (forDate, fresh) => {
@@ -282,9 +283,9 @@ export default function DashboardScreen() {
     } catch (err) {
       if (latestDate.current === forDate) setError(err.message);
     } finally {
-      setRefreshing(false);
+      finishRefresh();
     }
-  }, []);
+  }, [finishRefresh]);
 
   // Load now, then refresh every minute (the backend caches for 60 s anyway).
   useEffect(() => {
@@ -297,12 +298,14 @@ export default function DashboardScreen() {
     return () => clearInterval(timer);
   }, [date, load, today]);
 
-  // Refresh button / pull to refresh: new data straight from the sites for every section.
-  const onRefresh = () => {
-    setRefreshing(true);
-    setRefreshKey((k) => k + 1);
+  // A global reload: new data straight from the sites (the sections react to refreshKey themselves).
+  const seenRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (seenRefreshKey.current === refreshKey) return;
+    seenRefreshKey.current = refreshKey;
     load(date, true);
-  };
+  }, [refreshKey, date, load]);
+  const onRefresh = refreshAll;
 
   // Swipe left/right anywhere on Oversikt to go to the next/previous location (the same global choice as the
   // picker). The page follows the finger a little; horizontal swipes only, so vertical scrolling and the
@@ -361,11 +364,11 @@ export default function DashboardScreen() {
           subtitle={current?.updatedAt ? `Oppdatert ${formatTime(current.updatedAt)} · hvert minutt` : null}
           live={isToday}
           icon="time-outline"
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-        />
+        >
+          <DateFilter date={date} onChange={setDate} max={today} />
+        </PageHeader>
 
-        <DateFilter date={date} onChange={setDate} max={today} />
+
 
         {error && !current ? (
           <View style={styles.errorBox}>

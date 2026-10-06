@@ -6,6 +6,7 @@ import { addDays, formatNumber, toDateString } from '../format';
 import DateFilter from './DateFilter';
 import PageHeader from './PageHeader';
 import TopSellersCard from './TopSellersCard';
+import { useRefresh } from '../refresh';
 import { SkeletonCard } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -103,7 +104,7 @@ export default function StatistikkScreen() {
   const [date, setDate] = useState(today);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const { refreshing, refreshKey, refreshAll, finishRefresh } = useRefresh();
   const latestDate = useRef(date);
 
   const load = useCallback(async (forDate, fresh) => {
@@ -119,9 +120,9 @@ export default function StatistikkScreen() {
     } catch (err) {
       if (latestDate.current === forDate) setError(err.message);
     } finally {
-      setRefreshing(false);
+      finishRefresh();
     }
-  }, []);
+  }, [finishRefresh]);
 
   useEffect(() => {
     load(date);
@@ -133,11 +134,14 @@ export default function StatistikkScreen() {
     return () => clearInterval(timer);
   }, [date, load, today]);
 
-  // Refresh button / pull to refresh: new data straight from the sites.
-  const onRefresh = () => {
-    setRefreshing(true);
+  // A global reload (top bar button or pull to refresh): new data straight from the sites.
+  const seenRefreshKey = useRef(refreshKey);
+  useEffect(() => {
+    if (seenRefreshKey.current === refreshKey) return;
+    seenRefreshKey.current = refreshKey;
     load(date, true);
-  };
+  }, [refreshKey, date, load]);
+  const onRefresh = refreshAll;
 
   const isToday = date === today;
   const current = data?.date === date ? data : null;
@@ -157,11 +161,11 @@ export default function StatistikkScreen() {
           title="Statistikk"
           subtitle={current ? `Salg per time · åpent ${current.openHour}–${current.closeHour}` : null}
           icon="time-outline"
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-        />
+        >
+          <DateFilter date={date} onChange={setDate} max={today} />
+        </PageHeader>
 
-        <DateFilter date={date} onChange={setDate} max={today} />
+
 
         {error && !current ? (
           <View style={styles.errorBox}>

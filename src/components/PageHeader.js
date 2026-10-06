@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors, fonts } from '../theme';
 
@@ -24,42 +24,14 @@ function LiveDot() {
   );
 }
 
-// Round refresh button; the icon spins while a refresh is running.
-function RefreshButton({ onPress, refreshing, color = colors.accent }) {
-  const [spin] = useState(() => new Animated.Value(0));
-  useEffect(() => {
-    if (!refreshing) return undefined;
-    spin.setValue(0);
-    const loop = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 800, easing: Easing.linear, useNativeDriver: true }),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [refreshing, spin]);
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.refresh, pressed && styles.refreshPressed]}
-      onPress={onPress}
-      disabled={refreshing}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel="Oppdater nå"
-    >
-      <Animated.View style={{ transform: [{ rotate: refreshing ? rotate : '0deg' }] }}>
-        <Ionicons name="refresh" size={16} color={color} />
-      </Animated.View>
-    </Pressable>
-  );
-}
-
 // Page title with an info pill underneath (icon or live dot + short text). The pill keeps its space while
 // `subtitle` is still loading, so the page below doesn't jump.
-// With `onRefresh`, a refresh button sits next to the pill for fetching new data right away.
-// `logo` (an image source) shows a small service logo before the title; `accent` recolours the icons.
-export default function PageHeader({ title, subtitle, icon, live, onRefresh, refreshing, logo, accent = colors.accent }) {
+// `logo` (an image source) shows a small service logo before the title; `accent` recolours the icon.
+// Reloading is global now: the button sits in the top bar / sidebar.
+// Title, status and any children (the date bar) are grouped and framed by four L-shaped corners on every page.
+export default function PageHeader({ title, subtitle, icon, live, logo, accent = colors.accent, children }) {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, styles.card]}>
       <View style={styles.row}>
         {logo ? <Image source={logo} style={styles.logo} accessibilityIgnoresInvertColors /> : null}
         <Text style={styles.title}>{title}</Text>
@@ -73,27 +45,28 @@ export default function PageHeader({ title, subtitle, icon, live, onRefresh, ref
             </>
           ) : null}
         </View>
-        {onRefresh ? <RefreshButton onPress={onRefresh} refreshing={refreshing} color={accent} /> : null}
       </View>
+      {children ? <View style={styles.children}>{children}</View> : null}
+      <View style={[styles.corner, styles.cornerTL]} />
+      <View style={[styles.corner, styles.cornerTR]} />
+      <View style={[styles.corner, styles.cornerBL]} />
+      <View style={[styles.corner, styles.cornerBR]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: { alignItems: 'center', gap: 8, marginBottom: 4 },
+  card: { padding: 16, paddingTop: 18 },
+  // L-shaped corner marks around the grouped header (not a full frame).
+  corner: { position: 'absolute', width: 22, height: 22, borderColor: colors.accent },
+  cornerTL: { top: 0, left: 0, borderTopWidth: 2.5, borderLeftWidth: 2.5, borderTopLeftRadius: 12 },
+  cornerTR: { top: 0, right: 0, borderTopWidth: 2.5, borderRightWidth: 2.5, borderTopRightRadius: 12 },
+  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 2.5, borderLeftWidth: 2.5, borderBottomLeftRadius: 12 },
+  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 2.5, borderRightWidth: 2.5, borderBottomRightRadius: 12 },
+  children: { alignSelf: 'stretch', marginTop: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logo: { width: 34, height: 34 },
-  refresh: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  refreshPressed: { backgroundColor: colors.accentSoft },
   title: { fontFamily: fonts.headingBold, fontSize: 32, color: colors.text, textAlign: 'center' },
   pill: {
     flexDirection: 'row',
