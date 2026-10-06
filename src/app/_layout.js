@@ -151,13 +151,13 @@ const styles = StyleSheet.create({
   slot: { flexShrink: 1, flexBasis: 0, minHeight: 0 },
 
   topBar: {
-    paddingBottom: 8,
+    paddingBottom: 12,
     backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  topBarRow: { height: 40, justifyContent: 'center', alignItems: 'center' },
-  topBarLogo: { width: 90, height: 40 },
+  topBarRow: { height: 52, justifyContent: 'center', alignItems: 'center' },
+  topBarLogo: { width: 110, height: 48 },
   topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },
   sidebarLocation: { marginBottom: 16 },
 
