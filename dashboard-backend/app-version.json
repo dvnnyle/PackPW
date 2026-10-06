@@ -1,9 +1,11 @@
 {
-  "version": "1.0.6",
-  "versionCode": 6,
-  "apkUrl": "https://expo.dev/artifacts/eas/2RLHv9Ewbdc0TSky2nr1m_QV4vd-KEtzFYFx5r8sptM.apk",
+  "version": "1.0.10",
+  "versionCode": 10,
+  "apkUrl": "https://expo.dev/artifacts/eas/pzL2QQlLo0rrEA8j7eHiukywTIsWQqkkyDHKxIF8CIE.apk",
   "mandatory": false,
   "releaseNotes": [
-    "Ny app-ikon med Playworld-planeten"
+    "Ny serveradresse (packpw.onrender.com)",
+    "Bytte dato går med en gang",
+    "Ny app-ikon"
   ]
 }
