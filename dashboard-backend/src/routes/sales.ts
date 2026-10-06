@@ -3,15 +3,10 @@ import { cached, ttlForDate, wantsFresh } from '../cache/cache';
 import { getServiceAHourly, getServiceATopSellers } from '../services/serviceA';
 import { getServiceBHourly } from '../services/serviceB';
 import type { HourlySalesData } from '../types';
-import { isValidDate, todayInNorway } from '../utils/norway';
+import { isValidDate, locationOf, openingHours, todayInNorway } from '../utils/norway';
+import { DEMO_LOCATIONS, demoHourly } from '../services/demo';
 
 const router = Router();
-
-// Opening hours: 10–21 Monday–Friday, 10–19 on weekends.
-function openingHours(date: string): { open: number; close: number } {
-  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
-  return { open: 10, close: weekday === 0 || weekday === 6 ? 19 : 21 };
-}
 
 async function buildHourlySales(date: string): Promise<HourlySalesData> {
   const [extandaGo, nordpay, sellers] = await Promise.allSettled([
@@ -56,6 +51,10 @@ router.get('/hourly', async (req, res) => {
   const date = req.query.date ?? todayInNorway();
   if (!isValidDate(date)) {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
+    return;
+  }
+  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+    res.json({ ...demoHourly(date), demo: true });
     return;
   }
   res.json(await cached(`sales-hourly:${date}`, ttlForDate(date), () => buildHourlySales(date), wantsFresh(req.query)));

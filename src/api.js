@@ -26,7 +26,16 @@ const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 // fresh = skip the backend's cache and fetch new data from the sites (the refresh button).
 // onCached = called right away with the last answer saved on this device (if any), before the network
 // request finishes, so screens can show data instantly. Every successful answer is saved for next time.
-async function getJson(path, fresh = false, onCached) {
+// The location every data request is for (set by the location picker). The saved-answer cache is per
+// location too, because the location is part of the path.
+let currentLocation = 'sorlandet';
+export function setApiLocation(id) {
+  currentLocation = id;
+}
+
+async function getJson(rawPath, fresh = false, onCached) {
+  const general = rawPath.startsWith('/api/health') || rawPath.startsWith('/api/app-version');
+  const path = general ? rawPath : `${rawPath}${rawPath.includes('?') ? '&' : '?'}location=${currentLocation}`;
   if (onCached && !fresh) {
     const saved = readCache(path);
     if (saved !== undefined) onCached(saved);

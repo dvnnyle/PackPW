@@ -18,7 +18,7 @@ import { colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '../theme';
 import { canSelfUpdate, checkForUpdate } from '../updates';
 import UpdateDialog from '../components/UpdateDialog';
 import LocationPicker from '../components/LocationPicker';
-import { LocationProvider } from '../location';
+import { LocationProvider, useLocation } from '../location';
 
 // Keep the splash screen up until the fonts are loaded.
 SplashScreen.preventAutoHideAsync();
@@ -47,6 +47,22 @@ function NavButton({ tab, desktop, isFocused, ...props }) {
       <Ionicons name={isFocused ? tab.icon : `${tab.icon}-outline`} size={desktop ? 20 : 24} color={color} />
       <Text style={[desktop ? styles.sideLabel : styles.bottomLabel, { color }]}>{tab.label}</Text>
     </Pressable>
+  );
+}
+
+// The screens, rebuilt when the location changes so every page loads that location's data. Demo locations get
+// a yellow strip so made-up numbers are never mistaken for real ones.
+function LocationContent() {
+  const { location } = useLocation();
+  return (
+    <>
+      {location.demo ? (
+        <View style={styles.demoBar}>
+          <Text style={styles.demoText}>Demodata – Playworld {location.name} er ikke koblet til ennå</Text>
+        </View>
+      ) : null}
+      <TabSlot key={location.id} style={styles.slot} />
+    </>
   );
 }
 
@@ -129,7 +145,7 @@ export default function RootLayout() {
           {desktop ? menu : null}
 
           <View style={styles.content}>
-            <TabSlot style={styles.slot} />
+            <LocationContent />
           </View>
 
           {desktop ? null : menu}
@@ -156,6 +172,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  demoBar: { backgroundColor: '#fef3c7', paddingVertical: 6, paddingHorizontal: 12, alignItems: 'center' },
+  demoText: { fontFamily: fonts.semibold, fontSize: 12, color: '#92400e', textAlign: 'center' },
   topBarRow: { height: 52, justifyContent: 'center', alignItems: 'center' },
   topBarLogo: { width: 110, height: 48 },
   topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },

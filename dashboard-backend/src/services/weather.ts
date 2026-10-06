@@ -3,8 +3,11 @@
 // https://api.met.no/weatherapi/locationforecast/2.0/documentation
 import type { WeatherData, WeatherHour } from '../types';
 
-const LAT = 58.1794;
-const LON = 8.1338;
+// Where each location is: Playworld Sørlandet (Barstølveien 35, Kristiansand) and Triaden (Lørenskog).
+const PLACES: Record<string, { lat: number; lon: number }> = {
+  sorlandet: { lat: 58.1794, lon: 8.1338 },
+  triaden: { lat: 59.9277, lon: 10.9586 },
+};
 const USER_AGENT = 'playworld-dashboard/1.0 github.com/dvnnyle';
 
 interface RawStep {
@@ -16,7 +19,8 @@ interface RawStep {
   };
 }
 
-export async function getWeather(): Promise<WeatherData> {
+export async function getWeather(location = 'sorlandet'): Promise<WeatherData> {
+  const { lat: LAT, lon: LON } = PLACES[location] ?? PLACES.sorlandet;
   const response = await fetch(
     `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${LAT}&lon=${LON}`,
     { headers: { 'user-agent': USER_AGENT, accept: 'application/json' } },

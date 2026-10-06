@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { cached, wantsFresh } from '../cache/cache';
 import { config } from '../config';
 import { getStaffWeek, weekOf } from '../services/planday';
-import { isValidDate, todayInNorway } from '../utils/norway';
+import { isValidDate, locationOf, todayInNorway } from '../utils/norway';
+import { DEMO_LOCATIONS, demoStaff } from '../services/demo';
 
 const router = Router();
 
@@ -11,6 +12,10 @@ router.get('/', async (req, res) => {
   const date = req.query.date ?? todayInNorway();
   if (!isValidDate(date)) {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
+    return;
+  }
+  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+    res.json({ date, shifts: demoStaff(date), demo: true });
     return;
   }
   try {

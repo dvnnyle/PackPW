@@ -5,6 +5,7 @@ import { cardShadow, colors, fonts } from '../theme';
 import { toDateString } from '../format';
 import DateFilter from './DateFilter';
 import { logos } from '../logos';
+import { useLocation } from '../location';
 import { SkeletonBlock } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 10 * 60_000;
@@ -46,6 +47,7 @@ const temp = (t) => `${Math.round(t)}°`;
 // Weather at Playworld Sørlandet. Today: now + the next 12 hours. Other days (up to MET's ~9-day
 // forecast): midday weather, high/low, and that day's steps.
 export default function WeatherWidget({ refreshKey }) {
+  const { location } = useLocation();
   const today = toDateString(new Date());
   const [date, setDate] = useState(today);
   const [data, setData] = useState(null);
@@ -80,7 +82,7 @@ export default function WeatherWidget({ refreshKey }) {
     <View style={styles.card}>
       <View style={styles.header}>
         <Image source={logos.yr} style={styles.logo} accessibilityLabel="yr" />
-        <Text style={styles.title}>Været på Sørlandsparken</Text>
+        <Text style={styles.title}>Været på {location.place}</Text>
       </View>
 
       {data ? <DateFilter date={date} onChange={setDate} min={today} max={lastDay} inset /> : null}

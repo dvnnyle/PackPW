@@ -21,3 +21,14 @@ export function isValidDate(value: unknown): value is string {
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
 }
+
+// Opening hours: 10–21 Monday–Friday, 10–19 on weekends.
+export function openingHours(date: string): { open: number; close: number } {
+  const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
+  return { open: 10, close: weekday === 0 || weekday === 6 ? 19 : 21 };
+}
+
+// The location a request asks for (?location=…), defaulting to Sørlandet.
+export function locationOf(query: Record<string, unknown>): string {
+  return typeof query.location === 'string' && query.location ? query.location : 'sorlandet';
+}

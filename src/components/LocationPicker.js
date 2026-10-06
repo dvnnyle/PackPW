@@ -40,11 +40,13 @@ export default function LocationPicker() {
                   accessibilityState={{ selected, disabled: !l.available }}
                 >
                   <Text style={[styles.optionText, !l.available && styles.optionDisabled]}>Playworld {l.name}</Text>
-                  {l.available ? (
-                    selected ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null
-                  ) : (
+                  {!l.available ? (
                     <Text style={styles.soon}>Kommer snart</Text>
-                  )}
+                  ) : selected ? (
+                    <Ionicons name="checkmark" size={18} color={colors.accent} />
+                  ) : l.demo ? (
+                    <Text style={styles.soon}>Demodata</Text>
+                  ) : null}
                 </Pressable>
               );
             })}
