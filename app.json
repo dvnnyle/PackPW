@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Playworld",
-    "slug": "packworld",
+    "slug": "pack",
     "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,8 +17,7 @@
       "package": "no.playworld.dashboard",
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES"
-      ],
-      "versionCode": 8
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -50,9 +49,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "8ee794f3-daaa-4286-bfd0-f69ed41194bf"
+        "projectId": "5bf2d532-cfc8-4fdb-b747-5c8f4d68be04"
       }
-    },
-    "owner": "playworld"
+    }
   }
 }
