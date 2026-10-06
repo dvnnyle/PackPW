@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Image,
+  PanResponder,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -19,6 +20,7 @@ import WeatherWidget from './WeatherWidget';
 import BookingModal from './BookingModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { logos } from '../logos';
+import { LOCATIONS, useLocation } from '../location';
 import { SkeletonCard, SkeletonRows } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -302,6 +304,41 @@ export default function DashboardScreen() {
     load(date, true);
   };
 
+  // Swipe left/right anywhere on Oversikt to go to the next/previous location (the same global choice as the
+  // picker). The page follows the finger a little; horizontal swipes only, so vertical scrolling and the
+  // weather strip's own horizontal scroll keep working.
+  const { location, setLocationId } = useLocation();
+  const [dragX] = useState(() => new Animated.Value(0));
+  const swipe = useMemo(() => {
+    const locations = LOCATIONS.filter((l) => l.available);
+    const index = locations.findIndex((l) => l.id === location.id);
+    const settle = () => Animated.spring(dragX, { toValue: 0, useNativeDriver: true }).start();
+    return PanResponder.create({
+      // Capture phase: a clearly horizontal drag is claimed before the cards inside can take it.
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      // Keep the gesture once it has started horizontally (the page's scroll view asks to take it over).
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: (_, g) => {
+        // Resist at the ends (no location beyond the first/last).
+        const atEdge = (g.dx > 0 && index === 0) || (g.dx < 0 && index === locations.length - 1);
+        dragX.setValue(g.dx * (atEdge ? 0.15 : 0.5));
+      },
+      onPanResponderRelease: (_, g) => {
+        const next = g.dx < -80 ? index + 1 : g.dx > 80 ? index - 1 : index;
+        if (next === index || !locations[next]) return settle();
+        // Slide the page out first and switch afterwards: switching while the gesture is still being released
+        // rebuilds the screen under it and leaves the touch system stuck.
+        Animated.timing(dragX, { toValue: g.dx < 0 ? -400 : 400, duration: 140, useNativeDriver: true }).start(() =>
+          setTimeout(() => {
+            setLocationId(locations[next].id);
+            dragX.setValue(0);
+          }, 0),
+        );
+      },
+      onPanResponderTerminate: settle,
+    });
+  }, [dragX, location.id, setLocationId]);
+
   const isToday = date === today;
   const current = data?.date === date ? data : null;
   const sales = current?.serviceA;
@@ -313,8 +350,9 @@ export default function DashboardScreen() {
       : null;
 
   return (
-    <View style={styles.safe}>
-      <ScrollView
+    <View style={styles.safe} {...swipe.panHandlers}>
+      <Animated.ScrollView
+        style={{ transform: [{ translateX: dragX }] }}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
@@ -398,7 +436,7 @@ export default function DashboardScreen() {
         <WeatherWidget refreshKey={refreshKey} />
 
         <StaffSection refreshKey={refreshKey} />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
