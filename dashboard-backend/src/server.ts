@@ -27,6 +27,9 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Privacy policy for the Google Play listing: public, outside the website login.
+app.get('/personvern', (_req, res) => res.sendFile(path.resolve('public/personvern.html')));
+
 function sameSecret(given: string, expected: string): boolean {
   const a = Buffer.from(given);
   const b = Buffer.from(expected);
