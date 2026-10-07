@@ -6,6 +6,8 @@ export const config = {
   headless: process.env.HEADLESS !== 'false',
   // When set, every /api request except /api/health must send it in the x-api-key header.
   apiKey: process.env.API_KEY ?? '',
+  // Key for the Google Play build: only ever gets demo data (see isDemo), so it is safe for outside testers.
+  demoApiKey: process.env.DEMO_API_KEY ?? '',
   // Login for the website (browser login box / HTTP Basic Auth). The website is only served when WEB_PASSWORD is set.
   webUser: process.env.WEB_USER ?? 'playworld',
   webPassword: process.env.WEB_PASSWORD ?? '',

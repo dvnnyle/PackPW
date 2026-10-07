@@ -4,8 +4,8 @@ import { getServiceAData } from '../services/serviceA';
 import { getServiceBData } from '../services/serviceB';
 import { getBookings } from '../services/funbutler';
 import type { DashboardData } from '../types';
-import { isValidDate, locationOf, todayInNorway } from '../utils/norway';
-import { DEMO_LOCATIONS, demoDashboard } from '../services/demo';
+import { isValidDate, todayInNorway } from '../utils/norway';
+import { isDemo, demoDashboard } from '../services/demo';
 
 const router = Router();
 
@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+  if (isDemo(req, res)) {
     res.json({ ...demoDashboard(date), demo: true });
     return;
   }

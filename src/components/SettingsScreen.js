@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { API_URL, fetchHealth } from '../api';
+import { fetchHealth } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
 import { logos } from '../logos';
 import { canSelfUpdate, checkForUpdate, fromPlayStore, installedVersion, versionLabel } from '../updates';
@@ -129,7 +129,6 @@ export default function SettingsScreen() {
         </Group>
 
         <Group title="Tilkobling">
-          <Row icon="server-outline" label="Server" detail={API_URL} />
           <Row
             icon={health?.ok === false ? 'cloud-offline-outline' : 'pulse-outline'}
             label="Status"

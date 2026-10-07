@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { cached, wantsFresh } from '../cache/cache';
 import { config } from '../config';
 import { findNextBookingDay, getBookings, getUpcomingBookingDays } from '../services/funbutler';
-import { isValidDate, locationOf } from '../utils/norway';
-import { DEMO_LOCATIONS, demoBookings, demoUpcoming } from '../services/demo';
+import { isValidDate } from '../utils/norway';
+import { isDemo, demoBookings, demoUpcoming } from '../services/demo';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.get('/next', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "from" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+  if (isDemo(req, res)) {
     res.json({ date: demoUpcoming(from, 1)[0]?.date ?? null, demo: true });
     return;
   }
@@ -39,7 +39,7 @@ router.get('/upcoming', async (req, res) => {
     return;
   }
   const count = Math.min(30, Math.max(1, Number(req.query.count) || 10));
-  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+  if (isDemo(req, res)) {
     res.json({ days: demoUpcoming(from, count), demo: true });
     return;
   }
@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+  if (isDemo(req, res)) {
     res.json({ date, bookings: demoBookings(date), demo: true });
     return;
   }

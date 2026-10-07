@@ -2,9 +2,16 @@
 // Numbers are made up but stable: the same date always gives the same figures, and Oversikt's totals equal the
 // sum of Statistikk's hours. Remove a location from DEMO_LOCATIONS once its real logins are configured.
 import type { Booking, DashboardData, HourlySalesData, StaffShift } from '../types';
-import { openingHours, todayInNorway } from '../utils/norway';
+import type { Request, Response } from 'express';
+import { locationOf, openingHours, todayInNorway } from '../utils/norway';
 
 export const DEMO_LOCATIONS = new Set(['triaden']);
+
+// Demo data for this request: a demo location, or any location when the caller used DEMO_API_KEY (the Google Play
+// build, which testers outside Playworld can install, so it must never reach real sales or customer data).
+export function isDemo(req: Request, res: Response): boolean {
+  return res.locals.demoKey === true || DEMO_LOCATIONS.has(locationOf(req.query));
+}
 
 // Small seeded random generator so a date always produces the same demo values.
 function rng(seed: string): () => number {

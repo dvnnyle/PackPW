@@ -3,8 +3,8 @@ import { cached, ttlForDate, wantsFresh } from '../cache/cache';
 import { getServiceAHourly, getServiceATopSellers } from '../services/serviceA';
 import { getServiceBHourly } from '../services/serviceB';
 import type { HourlySalesData } from '../types';
-import { isValidDate, locationOf, openingHours, todayInNorway } from '../utils/norway';
-import { DEMO_LOCATIONS, demoHourly } from '../services/demo';
+import { isValidDate, openingHours, todayInNorway } from '../utils/norway';
+import { isDemo, demoHourly } from '../services/demo';
 
 const router = Router();
 
@@ -53,7 +53,7 @@ router.get('/hourly', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (DEMO_LOCATIONS.has(locationOf(req.query))) {
+  if (isDemo(req, res)) {
     res.json({ ...demoHourly(date), demo: true });
     return;
   }

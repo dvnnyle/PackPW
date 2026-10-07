@@ -48,9 +48,16 @@ function webLoginOk(req: express.Request): boolean {
 
 // On the open internet (Render) the API returns sales figures and customer contact details, so it requires
 // the app's API key or the website login. Locally, with no API_KEY set, it stays open for development.
+const DEMO_KEY_ROUTES = /^\/(dashboard|sales|bookings|staff|weather|app-version)(\/|$)/;
 const requireApiKey: RequestHandler = (req, res, next) => {
   if (!config.apiKey) return next();
-  if (sameSecret(req.get('x-api-key') ?? '', config.apiKey) || webLoginOk(req)) return next();
+  const key = req.get('x-api-key') ?? '';
+  if (sameSecret(key, config.apiKey) || webLoginOk(req)) return next();
+  // The Play build's key: demo data only, and only on the app's data routes (not /api/test or /api/cron).
+  if (config.demoApiKey && sameSecret(key, config.demoApiKey) && DEMO_KEY_ROUTES.test(req.path)) {
+    res.locals.demoKey = true;
+    return next();
+  }
   res.status(401).json({ error: 'Missing or invalid API key' });
 };
 app.use('/api', requireApiKey);

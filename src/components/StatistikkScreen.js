@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { API_URL, fetchHourlySales } from '../api';
+import { fetchHourlySales } from '../api';
 import { accentShadow, cardShadow, colors, fonts } from '../theme';
 import { addDays, formatNumber, toDateString } from '../format';
 import DateFilter from './DateFilter';
@@ -176,7 +176,6 @@ export default function StatistikkScreen() {
           <View style={styles.errorBox}>
             <Text style={styles.errorTitle}>Får ikke kontakt med serveren</Text>
             <Text style={styles.muted}>{error}</Text>
-            <Text style={styles.muted}>Prøvde: {API_URL}</Text>
           </View>
         ) : !current ? (
           // Same shapes as the total card, chart and table, so the page doesn't jump when data arrives.

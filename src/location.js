@@ -4,8 +4,10 @@ import { setApiLocation } from './api';
 // Playworld locations. `demo` = the backend serves made-up data until the real logins are configured.
 // Triaden uses the same systems as Sørlandet (Extanda Go, NordPay, FunButler, Planday); only its credentials are missing.
 // `place` is used for the weather card title.
+// The Google Play build uses a demo-only API key, so every location shows made-up data there.
+const playBuild = process.env.EXPO_PUBLIC_DISTRIBUTION === 'play';
 export const LOCATIONS = [
-  { id: 'sorlandet', name: 'Sørlandet', place: 'Sørlandsparken', available: true },
+  { id: 'sorlandet', name: 'Sørlandet', place: 'Sørlandsparken', available: true, demo: playBuild },
   { id: 'triaden', name: 'Triaden', place: 'Lørenskog', available: true, demo: true },
 ];
 

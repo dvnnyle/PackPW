@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { API_URL, fetchBookings, fetchDashboard, fetchNextBookingDay } from '../api';
+import { fetchBookings, fetchDashboard, fetchNextBookingDay } from '../api';
 import { accentShadow, cardShadow, colors, fonts } from '../theme';
 import { addDays, DAYS, formatNumber, MONTHS, parseDate, toDateString } from '../format';
 import DateFilter from './DateFilter';
@@ -349,7 +349,6 @@ function OversiktPage({ locationId }) {
           <View style={styles.errorBox}>
             <Text style={styles.errorTitle}>Får ikke kontakt med serveren</Text>
             <Text style={styles.muted}>{error}</Text>
-            <Text style={styles.muted}>Prøvde: {API_URL}</Text>
           </View>
         ) : !current ? (
           // Same shapes as the total card and the two sales sections, so the page doesn't jump when data arrives.

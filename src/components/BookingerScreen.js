@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { API_URL, fetchUpcomingBookings } from '../api';
+import { fetchUpcomingBookings } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
 import { addDays, DAYS, MONTHS, parseDate, toDateString } from '../format';
 import { SkeletonCard } from './Skeleton';
@@ -164,7 +164,6 @@ export default function BookingerScreen() {
           <View style={styles.errorBox}>
             <Text style={styles.errorTitle}>Kunne ikke hente bookinger fra FunButler</Text>
             <Text style={styles.muted}>{error}</Text>
-            <Text style={styles.muted}>Prøvde: {API_URL}</Text>
           </View>
         ) : !days ? (
           // Day cards with booking rows, so the page doesn't jump when data arrives.
