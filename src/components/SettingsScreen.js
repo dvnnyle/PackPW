@@ -4,7 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { API_URL, fetchHealth } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
 import { logos } from '../logos';
-import { canSelfUpdate, checkForUpdate, installedVersion, versionLabel } from '../updates';
+import { canSelfUpdate, checkForUpdate, fromPlayStore, installedVersion, versionLabel } from '../updates';
 import PageHeader from './PageHeader';
 import UpdateDialog from './UpdateDialog';
 
@@ -114,7 +114,13 @@ export default function SettingsScreen() {
           <Row
             icon="cloud-download-outline"
             label="Se etter oppdateringer"
-            detail={canSelfUpdate ? (checkResult ?? 'Sjekkes også automatisk når appen åpnes') : 'Bare i Android-appen'}
+            detail={
+              canSelfUpdate
+                ? (checkResult ?? 'Sjekkes også automatisk når appen åpnes')
+                : fromPlayStore
+                  ? 'Oppdateres automatisk via Google Play'
+                  : 'Bare i Android-appen'
+            }
             onPress={canSelfUpdate ? checkNow : undefined}
             busy={checking}
             disabled={!canSelfUpdate}

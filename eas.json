@@ -23,7 +23,11 @@
       "autoIncrement": true,
       "environment": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://packpw.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://packpw.onrender.com",
+        "EXPO_PUBLIC_DISTRIBUTION": "play"
+      },
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   },

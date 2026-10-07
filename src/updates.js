@@ -29,9 +29,13 @@ export function versionLabel(version, versionCode) {
   return `${version} (${versionCode})`;
 }
 
-// Only a real Android build can update itself. Not web, not iOS (that will be TestFlight), and not
-// Expo Go, where the "installed version" would be Expo Go's own.
-export const canSelfUpdate = Platform.OS === 'android' && Constants.executionEnvironment !== 'storeClient';
+// Installed from Google Play (EAS profile "production"): updates come through Play, never as an APK.
+export const fromPlayStore = process.env.EXPO_PUBLIC_DISTRIBUTION === 'play';
+
+// Only the private Android APK updates itself. Not web, not iOS (that will be TestFlight), not the Google Play
+// version, and not Expo Go, where the "installed version" would be Expo Go's own.
+export const canSelfUpdate =
+  Platform.OS === 'android' && Constants.executionEnvironment !== 'storeClient' && !fromPlayStore;
 
 // → { updateAvailable, installed, version, versionCode, apkUrl, mandatory, releaseNotes }
 // Cached for 30 minutes unless `force` (the Settings button).
