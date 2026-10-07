@@ -59,10 +59,14 @@ router.get("/warmup", async (_req, res) => {
     }),
   );
 
-  const ok = results.every((r) => r.status === 200);
+  // Tiny plain-text answer: cron services (cron-job.org) abort responses over a small size limit.
+  // Details are in the server log instead.
+  const failed = results.filter((r) => r.status !== 200);
+  console.log(`[cron] warmup ${Date.now() - started} ms`, failed.length ? failed : "all ok");
   res
-    .status(ok ? 200 : 502)
-    .json({ ok, date: today, ms: Date.now() - started, results });
+    .status(failed.length ? 502 : 200)
+    .type("text/plain")
+    .send(failed.length ? `fail ${failed.map((r) => r.path).join(",")}` : "ok");
 });
 
 export default router;
