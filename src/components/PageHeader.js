@@ -29,12 +29,13 @@ function LiveDot() {
 // `logo` (an image source) shows a small service logo before the title; `accent` recolours the icon.
 // Reloading is global now: the button sits in the top bar / sidebar.
 // Title, status and any children (the date bar) are grouped and framed by four L-shaped corners on every page.
-export default function PageHeader({ title, subtitle, icon, live, logo, accent = colors.accent, children }) {
+// `compact`: everything in one row (title and pill on the left, children on the right), for the desktop Oversikt.
+export default function PageHeader({ title, subtitle, icon, live, logo, accent = colors.accent, compact, children }) {
   return (
-    <View style={[styles.header, styles.card]}>
+    <View style={[styles.header, styles.card, compact && styles.compact]}>
       <View style={styles.row}>
         {logo ? <Image source={logo} style={styles.logo} accessibilityIgnoresInvertColors /> : null}
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, compact && styles.titleCompact]}>{title}</Text>
       </View>
       <View style={styles.row}>
         <View style={[styles.pill, !subtitle && styles.pillEmpty]}>
@@ -46,7 +47,7 @@ export default function PageHeader({ title, subtitle, icon, live, logo, accent =
           ) : null}
         </View>
       </View>
-      {children ? <View style={styles.children}>{children}</View> : null}
+      {children ? <View style={compact ? styles.childrenCompact : styles.children}>{children}</View> : null}
       <View style={[styles.corner, styles.cornerTL]} />
       <View style={[styles.corner, styles.cornerTR]} />
       <View style={[styles.corner, styles.cornerBL]} />
@@ -65,6 +66,9 @@ const styles = StyleSheet.create({
   cornerBL: { bottom: 0, left: 0, borderBottomWidth: 2.5, borderLeftWidth: 2.5, borderBottomLeftRadius: 12 },
   cornerBR: { bottom: 0, right: 0, borderBottomWidth: 2.5, borderRightWidth: 2.5, borderBottomRightRadius: 12 },
   children: { alignSelf: 'stretch', marginTop: 6 },
+  compact: { flexDirection: 'row', gap: 16, marginBottom: 0, paddingVertical: 12 },
+  titleCompact: { fontSize: 26 },
+  childrenCompact: { flex: 1, maxWidth: 560, marginLeft: 'auto' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logo: { width: 34, height: 34 },
   title: { fontFamily: fonts.headingBold, fontSize: 32, color: colors.text, textAlign: 'center' },
