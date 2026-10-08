@@ -14,7 +14,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import { Syne_700Bold, Syne_800ExtraBold } from '@expo-google-fonts/syne';
-import { colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '../theme';
+import { accentShadow, colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '../theme';
 import { canSelfUpdate, checkForUpdate } from '../updates';
 import UpdateDialog from '../components/UpdateDialog';
 import LocationPicker from '../components/LocationPicker';
@@ -29,17 +29,22 @@ SplashScreen.preventAutoHideAsync();
 
 const logo = require('../../assets/branding/logo.png');
 
-// The four main tabs. Add a screen file in src/app/ with the same name to create a new one.
+// The main tabs. Add a screen file in src/app/ with the same name to create a new one.
 const TABS = [
-  { name: 'index', href: '/', label: 'Oversikt', icon: 'home' },
+  { name: 'index', href: '/', label: 'Oversikt', icon: 'rocket' },
   { name: 'bookinger', href: '/bookinger', label: 'Bookinger', icon: 'calendar' },
   { name: 'statistikk', href: '/statistikk', label: 'Statistikk', icon: 'stats-chart' },
+  { name: 'vaer', href: '/vaer', label: 'Været', icon: 'partly-sunny' },
   { name: 'innstillinger', href: '/innstillinger', label: 'Innstillinger', icon: 'settings' },
 ];
+// Phone bottom bar: Oversikt in the middle of the five. The desktop sidebar keeps the order above.
+const BOTTOM_TABS = ['bookinger', 'statistikk', 'index', 'vaer', 'innstillinger'].map((n) => TABS.find((t) => t.name === n));
 
 // One menu item; rendered as a sidebar row on desktop and a bottom-bar button on mobile.
+// On the phone, Oversikt (the middle tab) sits in a raised blue circle.
 function NavButton({ tab, desktop, isFocused, ...props }) {
   const color = isFocused ? colors.accent : colors.muted;
+  const featured = !desktop && tab.name === 'index';
   return (
     <Pressable
       {...props}
@@ -48,7 +53,13 @@ function NavButton({ tab, desktop, isFocused, ...props }) {
         desktop && isFocused && styles.sideItemActive,
       ]}
     >
-      <Ionicons name={isFocused ? tab.icon : `${tab.icon}-outline`} size={desktop ? 20 : 24} color={color} />
+      {featured ? (
+        <View style={[styles.featured, !isFocused && styles.featuredIdle]}>
+          <Ionicons name={tab.icon} size={30} color="#fff" />
+        </View>
+      ) : (
+        <Ionicons name={isFocused ? tab.icon : `${tab.icon}-outline`} size={desktop ? 20 : 24} color={color} />
+      )}
       <Text style={[desktop ? styles.sideLabel : styles.bottomLabel, { color }]}>{tab.label}</Text>
     </Pressable>
   );
@@ -130,7 +141,7 @@ export default function RootLayout() {
           <RefreshButton />
         </View>
       ) : null}
-      {TABS.map((tab) => (
+      {(desktop ? TABS : BOTTOM_TABS).map((tab) => (
         <TabTrigger key={tab.name} name={tab.name} asChild>
           <NavButton tab={tab} desktop={desktop} />
         </TabTrigger>
@@ -220,6 +231,21 @@ const styles = StyleSheet.create({
   },
   bottomItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 4 },
   bottomLabel: { fontFamily: fonts.medium, fontSize: 11 },
+  // Raised circle for Oversikt, sticking out above the bar's top edge.
+  featured: {
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    marginTop: -38,
+    marginBottom: -2,
+    backgroundColor: colors.accent,
+    borderWidth: 4,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...accentShadow,
+  },
+  featuredIdle: { opacity: 0.85 },
 
   sidebar: {
     width: SIDEBAR_WIDTH,
