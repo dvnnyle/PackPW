@@ -29,7 +29,8 @@ import { AuthProvider, useAuth } from '../auth';
 // Keep the splash screen up until the fonts are loaded.
 SplashScreen.preventAutoHideAsync();
 
-const logo = require('../../assets/branding/hub_logo.png');
+// Top bars use the normal Playworld logo; the Playworld Hub icon is used everywhere else (app icon, login, favicon).
+const logo = require('../../assets/branding/logo.png');
 
 // The main tabs. Add a screen file in src/app/ with the same name to create a new one.
 const TABS = [
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   topBarRow: { height: 52, justifyContent: 'center', alignItems: 'center' },
-  topBarLogo: { width: 48, height: 48, borderRadius: 12 },
+  topBarLogo: { width: 110, height: 48 },
   topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },
   topBarRight: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
 
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   topNavBrand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  topNavLogo: { width: 52, height: 52, borderRadius: 14 },
+  topNavLogo: { width: 72, height: 56 },
   topNavTitle: { fontFamily: fonts.headingBold, fontSize: 18, lineHeight: 20, color: colors.text },
   topNavTabs: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 4 },
   topNavRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
