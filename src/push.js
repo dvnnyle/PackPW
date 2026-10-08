@@ -22,10 +22,15 @@ export async function registerForPush() {
   try {
     const Notifications = require('expo-notifications');
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
+      // A channel's importance can't be raised once created, so this is a new one ("default" from 1.0.20 popped
+      // up silently). MAX = shown as a pop-up with sound.
+      await Notifications.setNotificationChannelAsync('varsler', {
         name: 'Varsler',
-        importance: Notifications.AndroidImportance.HIGH,
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'default',
+        vibrationPattern: [0, 250, 250, 250],
       });
+      await Notifications.deleteNotificationChannelAsync('default').catch(() => {});
     }
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') return;
