@@ -142,26 +142,25 @@ function BookingsSection({ refreshKey, locationId }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const latestDate = useRef(date);
-  const [nextState, setNextState] = useState(null); // null | 'searching' | 'none' | 'error'
+  // Result of "go to next day with booking" for the day it was pressed on: { date, state: 'searching' | 'none' | 'error' }.
+  const [next, setNext] = useState(null);
+  const nextState = next?.date === date ? next.state : null;
 
   // Jump to the first day after the selected one that has bookings.
   const goToNextBookingDay = async () => {
-    setNextState('searching');
+    setNext({ date, state: 'searching' });
     try {
-      const { date: next } = await fetchNextBookingDay(addDays(date, 1), locationId);
-      if (next) {
-        setNextState(null);
-        setDate(next);
+      const { date: nextDate } = await fetchNextBookingDay(addDays(date, 1), locationId);
+      if (nextDate) {
+        setNext(null);
+        setDate(nextDate);
       } else {
-        setNextState('none');
+        setNext({ date, state: 'none' });
       }
     } catch {
-      setNextState('error');
+      setNext({ date, state: 'error' });
     }
   };
-
-  // Clear the "no upcoming bookings" message when the user changes day.
-  useEffect(() => setNextState(null), [date]);
 
   const load = useCallback(async (forDate, fresh) => {
     latestDate.current = forDate;
@@ -299,6 +298,7 @@ function OversiktPage({ locationId }) {
 
   // Load now, then refresh every minute (the backend caches for 60 s anyway).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data loading; the saved answer is shown at once
     load(date);
     // Fetch the day before and after in the background (saved on the device), so ‹ › show data instantly.
     for (const day of [addDays(date, -1), addDays(date, 1)]) {
@@ -505,7 +505,6 @@ const styles = StyleSheet.create({
   dateText: { fontFamily: fonts.semibold, fontSize: 20, color: '#111827' },
   todayButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: '#dbeafe' },
   todayButtonText: { fontFamily: fonts.semibold, color: '#1e40af' },
-  bookingsLoader: { marginVertical: 24 },
   emptyCard: { alignItems: 'center', gap: 10, paddingVertical: 20 },
   nextButton: { backgroundColor: '#2563eb', borderRadius: 999, paddingHorizontal: 18, paddingVertical: 10, minWidth: 220, alignItems: 'center' },
   nextButtonBusy: { opacity: 0.7 },
@@ -527,7 +526,6 @@ const styles = StyleSheet.create({
   detail: { fontFamily: fonts.regular, fontSize: 14, color: '#374151', marginTop: 6 },
   positive: { color: '#15803d' },
   negative: { color: '#b91c1c' },
-  center: { alignItems: 'center', gap: 12, marginTop: 48 },
   muted: { fontFamily: fonts.regular, fontSize: 13, color: '#6b7280', marginTop: 4 },
   errorBox: { backgroundColor: '#fef2f2', borderRadius: 14, padding: 14 },
   errorTitle: { fontFamily: fonts.semibold, fontSize: 16, color: '#b91c1c' },

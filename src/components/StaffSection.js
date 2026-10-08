@@ -42,16 +42,15 @@ export default function StaffSection({ refreshKey, locationId }) {
   const today = toDateString(new Date());
   const [date, setDate] = useState(today);
   const [result, setResult] = useState(null); // { date, shifts }
-  const [failed, setFailed] = useState(false);
+  const [failedDate, setFailedDate] = useState(null); // the day whose load failed
 
   // A changed refreshKey means the user pressed refresh: skip the backend cache for that load.
   const seenRefreshKey = useRef(refreshKey);
   useEffect(() => {
     const load = (fresh) =>
       fetchStaff(date, fresh, (saved) => setResult((r) => (r?.date === date ? r : saved)), locationId)
-        .then((d) => (setResult(d), setFailed(false)))
-        .catch(() => setFailed(true));
-    setFailed(false);
+        .then((d) => (setResult(d), setFailedDate(null)))
+        .catch(() => setFailedDate(date));
     load(seenRefreshKey.current !== refreshKey);
     seenRefreshKey.current = refreshKey;
     const timer = setInterval(() => load(false), REFRESH_INTERVAL_MS);
@@ -72,7 +71,7 @@ export default function StaffSection({ refreshKey, locationId }) {
 
       <DateFilter date={date} onChange={setDate} inset />
 
-      {!shifts && failed ? (
+      {!shifts && failedDate === date ? (
         <Text style={styles.error}>Kunne ikke hente vaktplanen fra Planday</Text>
       ) : !shifts ? (
         <SkeletonRows count={4} height={64} />

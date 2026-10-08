@@ -6,8 +6,6 @@ export const config = {
   headless: process.env.HEADLESS !== 'false',
   // When set, every /api request except /api/health must send it in the x-api-key header.
   apiKey: process.env.API_KEY ?? '',
-  // Key for the Google Play build: only ever gets demo data (see isDemo), so it is safe for outside testers.
-  demoApiKey: process.env.DEMO_API_KEY ?? '',
   // App login (see auth.ts): APP_PASSWORD = real data, DEMO_PASSWORD = demo data only. Empty = that login is off.
   appPassword: process.env.APP_PASSWORD ?? '',
   demoPassword: process.env.DEMO_PASSWORD ?? '',

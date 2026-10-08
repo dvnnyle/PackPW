@@ -1,8 +1,3 @@
-export interface TestResult {
-  success: true;
-  value: ServiceAData;
-}
-
 // Location 1: today's figures from the Wallmob home page boxes.
 export interface ServiceAData {
   revenueToday: number | null;

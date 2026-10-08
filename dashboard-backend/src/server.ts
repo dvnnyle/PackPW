@@ -1,11 +1,9 @@
-import { timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express';
 import cors from 'cors';
 import { config } from './config';
 import { closeBrowser } from './browser/browser';
-import testRouter from './routes/test';
 import bookingsRouter from './routes/bookings';
 import dashboardRouter from './routes/dashboard';
 import salesRouter from './routes/sales';
@@ -13,7 +11,7 @@ import weatherRouter from './routes/weather';
 import staffRouter from './routes/staff';
 import appVersionRouter from './routes/appVersion';
 import cronRouter from './routes/cron';
-import loginRouter, { verifyToken } from './auth';
+import loginRouter, { sameSecret, verifyToken } from './auth';
 import { getStaffWeek } from './services/planday';
 import { getServiceAData } from './services/serviceA';
 import { getServiceBData } from './services/serviceB';
@@ -31,15 +29,9 @@ app.use('/api/login', loginRouter);
 // Privacy policy for the Google Play listing: public, outside the website login.
 app.get('/personvern', (_req, res) => res.sendFile(path.resolve('public/personvern.html')));
 
-function sameSecret(given: string, expected: string): boolean {
-  const a = Buffer.from(given);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 // On the open internet (Render) the API returns sales figures and customer contact details, so it requires
 // the app login (Bearer token, the same on the phone and the website) or the old app API key. Locally, with no API_KEY set, it stays
-// open for development. Demo logins and the demo key only get demo data, and only on the app's data routes.
+// open for development. Demo logins only get demo data, and only on the app's data routes.
 const DEMO_ROUTES = /^\/(dashboard|sales|bookings|staff|weather|app-version)(\/|$)/;
 const requireApiKey: RequestHandler = (req, res, next) => {
   const [scheme, token] = (req.get('authorization') ?? '').split(' ');
@@ -52,16 +44,10 @@ const requireApiKey: RequestHandler = (req, res, next) => {
   if (!config.apiKey) return next();
   const key = req.get('x-api-key') ?? '';
   if (sameSecret(key, config.apiKey)) return next();
-  // The Play build's key: demo data only, and only on the app's data routes (not /api/test or /api/cron).
-  if (config.demoApiKey && sameSecret(key, config.demoApiKey) && DEMO_ROUTES.test(req.path)) {
-    res.locals.demo = true;
-    return next();
-  }
   res.status(401).json({ error: 'Missing or invalid API key' });
 };
 app.use('/api', requireApiKey);
 
-app.use('/api/test', testRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/sales', salesRouter);

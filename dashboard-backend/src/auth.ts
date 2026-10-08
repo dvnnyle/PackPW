@@ -9,7 +9,8 @@ const TOKEN_DAYS = 90;
 
 export type Session = { demo: boolean };
 
-function sameSecret(given: string, expected: string): boolean {
+// Constant-time comparison, so response timing doesn't reveal how much of a secret was right.
+export function sameSecret(given: string, expected: string): boolean {
   const a = Buffer.from(given);
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);

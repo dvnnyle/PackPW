@@ -17,7 +17,7 @@ function getApiUrl() {
   return `http://${host}:${BACKEND_PORT}`;
 }
 
-export const API_URL = getApiUrl();
+const API_URL = getApiUrl();
 
 // The Render backend only answers logged-in requests: the app and the website send the token from the login screen
 // (see auth.js). Locally the backend is open and any password logs in.

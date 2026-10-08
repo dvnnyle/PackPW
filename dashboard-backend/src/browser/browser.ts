@@ -13,7 +13,7 @@ const IDLE_CLOSE_MS = 60_000;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
 // One shared Chromium instance for the whole server; each service gets its own context.
-export function getBrowser(): Promise<Browser> {
+function getBrowser(): Promise<Browser> {
   if (idleTimer) clearTimeout(idleTimer);
   if (!browserPromise) {
     browserPromise = chromium.launch({

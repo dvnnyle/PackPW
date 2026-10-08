@@ -129,6 +129,7 @@ export default function StatistikkScreen() {
   }, [finishRefresh, location.id]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data loading; the saved answer is shown at once
     load(date);
     // Fetch the day before and after in the background (saved on the device), so ‹ › show data instantly.
     for (const day of [addDays(date, -1), addDays(date, 1)]) {
@@ -247,7 +248,6 @@ export default function StatistikkScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, minHeight: 0, backgroundColor: colors.background },
   content: { padding: 16, paddingBottom: 48, gap: 12, width: '100%', maxWidth: 760, alignSelf: 'center' },
-  center: { alignItems: 'center', gap: 12, marginTop: 48 },
   muted: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 4 },
   errorBox: { backgroundColor: '#fef2f2', borderRadius: 14, padding: 14 },
   errorTitle: { fontFamily: fonts.semibold, fontSize: 16, color: '#b91c1c' },

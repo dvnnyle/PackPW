@@ -5,10 +5,10 @@ import type { Booking, DashboardData, HourlySalesData, StaffShift } from '../typ
 import type { Request, Response } from 'express';
 import { locationOf, openingHours, todayInNorway } from '../utils/norway';
 
-export const DEMO_LOCATIONS = new Set(['triaden']);
+const DEMO_LOCATIONS = new Set(['triaden']);
 
-// Demo data for this request: a demo location, or any location for a demo login or DEMO_API_KEY (the Google Play
-// app, which anyone can install, so those must never reach real sales or customer data).
+// Demo data for this request: a demo location, or any location for a demo login (DEMO_PASSWORD, which may be given
+// to people outside Playworld, so it must never reach real sales or customer data).
 export function isDemo(req: Request, res: Response): boolean {
   return res.locals.demo === true || DEMO_LOCATIONS.has(locationOf(req.query));
 }

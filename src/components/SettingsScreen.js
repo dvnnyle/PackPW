@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fetchHealth } from '../api';
@@ -61,6 +61,17 @@ function Row({ icon, logo, label, detail, value, valueColor, onPress, last, busy
   );
 }
 
+// One health check → { ok: true, ms } or { ok: false }.
+async function timeHealthCheck() {
+  const started = Date.now();
+  try {
+    await fetchHealth();
+    return { ok: true, ms: Date.now() - started };
+  } catch {
+    return { ok: false };
+  }
+}
+
 export default function SettingsScreen() {
   const installed = installedVersion();
   const [checking, setChecking] = useState(false);
@@ -69,20 +80,14 @@ export default function SettingsScreen() {
   const [health, setHealth] = useState(null); // { ok, ms }
   const { demo, logout } = useAuth();
 
-  const pingServer = useCallback(async () => {
-    setHealth(null);
-    const started = Date.now();
-    try {
-      await fetchHealth();
-      setHealth({ ok: true, ms: Date.now() - started });
-    } catch {
-      setHealth({ ok: false });
-    }
-  }, []);
-
+  // `health` starts as null (checking); pressing the Status row checks again.
   useEffect(() => {
-    pingServer();
-  }, [pingServer]);
+    timeHealthCheck().then(setHealth);
+  }, []);
+  const pingServer = () => {
+    setHealth(null);
+    timeHealthCheck().then(setHealth);
+  };
 
   const checkNow = async () => {
     setChecking(true);

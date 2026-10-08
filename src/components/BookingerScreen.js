@@ -93,6 +93,7 @@ export default function BookingerScreen() {
 
   useEffect(() => {
     shownCount.current = PAGE_SIZE;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data loading; the saved answer is shown at once
     load(from);
     const timer = setInterval(() => load(from), REFRESH_INTERVAL_MS);
     return () => clearInterval(timer);
