@@ -6,6 +6,7 @@ import { addDays, DAYS, MONTHS, parseDate, toDateString } from '../format';
 import DateFilter from './DateFilter';
 import { logos } from '../logos';
 import { LOCATIONS } from '../location';
+import { usePagerLock } from '../pager';
 import { SkeletonBlock } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 10 * 60_000;
@@ -52,6 +53,7 @@ export default function WeatherWidget({ refreshKey, locationId }) {
   const [date, setDate] = useState(today);
   const [data, setData] = useState(null);
   const [failed, setFailed] = useState(false);
+  const lockPager = usePagerLock();
 
   useEffect(() => {
     const load = () =>
@@ -117,7 +119,16 @@ export default function WeatherWidget({ refreshKey, locationId }) {
             </View>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hours}>
+          <ScrollView
+            horizontal
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.hours}
+            onTouchStart={() => lockPager(true)}
+            onTouchEnd={() => lockPager(false)}
+            onTouchCancel={() => lockPager(false)}
+            onMomentumScrollEnd={() => lockPager(false)}
+          >
             {strip.map((h) => (
               <View key={h.time} style={[styles.hour, h.period === 6 && styles.hourWide]}>
                 <Text style={styles.hourTime}>{stepLabel(h)}</Text>

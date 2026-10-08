@@ -21,6 +21,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { logos } from '../logos';
 import { useLocation } from '../location';
 import { useRefresh } from '../refresh';
+import { PagerLockContext } from '../pager';
 import { SkeletonCard, SkeletonRows } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
@@ -427,6 +428,7 @@ export default function DashboardScreen() {
   const index = Math.max(0, locations.findIndex((l) => l.id === location.id));
   const [size, setSize] = useState(null);
   const pager = useRef(null);
+  const [locked, setLocked] = useState(false); // a strip inside a page is being scrolled
   const settleTimer = useRef(null);
 
   // Follow the picker (and the first layout): show the chosen location's page.
@@ -446,23 +448,26 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.safe} onLayout={(e) => setSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}>
-      {size ? (
-        <ScrollView
-          ref={pager}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          scrollEventThrottle={32}
-          onScroll={onScroll}
-          contentOffset={{ x: index * size.width, y: 0 }}
-        >
-          {locations.map((l) => (
-            <View key={l.id} style={{ width: size.width, height: size.height }}>
-              <OversiktPage locationId={l.id} />
-            </View>
-          ))}
-        </ScrollView>
-      ) : null}
+      <PagerLockContext.Provider value={setLocked}>
+        {size ? (
+          <ScrollView
+            ref={pager}
+            horizontal
+            pagingEnabled
+            scrollEnabled={!locked}
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={32}
+            onScroll={onScroll}
+            contentOffset={{ x: index * size.width, y: 0 }}
+          >
+            {locations.map((l) => (
+              <View key={l.id} style={{ width: size.width, height: size.height }}>
+                <OversiktPage locationId={l.id} />
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
+      </PagerLockContext.Provider>
     </View>
   );
 }
