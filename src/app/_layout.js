@@ -132,7 +132,10 @@ export default function RootLayout() {
     <View style={styles.topNav}>
       <View style={styles.topNavBrand}>
         <Image source={logo} style={styles.topNavLogo} resizeMode="contain" />
-        <Text style={styles.topNavTitle}>Playworld Hub</Text>
+        <View>
+          <Text style={styles.topNavTitle}>Playworld</Text>
+          <Text style={[styles.topNavTitle, styles.topNavSub]}>Hub</Text>
+        </View>
       </View>
       <View style={styles.topNavTabs}>{tabs}</View>
       <View style={styles.topNavRight}>
@@ -249,7 +252,8 @@ const styles = StyleSheet.create({
   },
   topNavBrand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   topNavLogo: { width: 52, height: 52, borderRadius: 14 },
-  topNavTitle: { fontFamily: fonts.headingBold, fontSize: 20, color: colors.text },
+  topNavTitle: { fontFamily: fonts.headingBold, fontSize: 18, lineHeight: 20, color: colors.text },
+  topNavSub: { color: '#ffc327' },
   topNavTabs: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 4 },
   topNavRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999 },
