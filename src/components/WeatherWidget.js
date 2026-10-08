@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { fetchWeather } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
-import { toDateString } from '../format';
+import { addDays, DAYS, MONTHS, parseDate, toDateString } from '../format';
 import DateFilter from './DateFilter';
 import { logos } from '../logos';
 import { LOCATIONS } from '../location';
@@ -136,6 +136,71 @@ export default function WeatherWidget({ refreshKey, locationId }) {
   );
 }
 
+// One row per day for the next 7 days: weather around midday, high/low and total rain, from the same MET data.
+export function WeekForecast({ refreshKey, locationId }) {
+  const [data, setData] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    fetchWeather((saved) => setData((d) => d ?? saved), locationId)
+      .then((d) => (setData(d), setFailed(false)))
+      .catch(() => setFailed(true));
+  }, [refreshKey, locationId]);
+
+  const today = toDateString(new Date());
+  const days = data
+    ? Array.from({ length: 7 }, (_, i) => addDays(today, i))
+        .map((date) => {
+          const steps = [data.now, ...data.hours].filter((st) => dayOf(st.time) === date);
+          if (!steps.length) return null;
+          const midday = steps.reduce((best, st) =>
+            Math.abs(new Date(st.time).getHours() - 12) < Math.abs(new Date(best.time).getHours() - 12) ? st : best,
+          );
+          const temps = steps.map((st) => st.temperature);
+          const rain = steps.reduce((sum, st) => sum + (st.precipitation ?? 0), 0);
+          return { date, symbol: midday.symbol, high: Math.max(...temps), low: Math.min(...temps), rain };
+        })
+        .filter(Boolean)
+    : null;
+
+  const dayLabel = (date) => {
+    if (date === today) return 'I dag';
+    if (date === addDays(today, 1)) return 'I morgen';
+    const d = parseDate(date);
+    return `${DAYS[d.getDay()]} ${d.getDate()}. ${MONTHS[d.getMonth()]}`;
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <Image source={logos.yr} style={styles.logo} accessibilityLabel="yr" />
+        <Text style={styles.title}>Neste 7 dager</Text>
+      </View>
+      {!days && failed ? (
+        <Text style={styles.error}>Kunne ikke hente været</Text>
+      ) : !days ? (
+        <SkeletonBlock height={7 * 48} radius={14} />
+      ) : (
+        days.map((day) => (
+          <View
+            key={day.date}
+            style={styles.dayRow}
+            accessible
+            accessibilityLabel={`${dayLabel(day.date)}: ${describe(day.symbol)}, ${temp(day.low)} til ${temp(day.high)}`}
+          >
+            <Text style={styles.dayName}>{dayLabel(day.date)}</Text>
+            <WeatherIcon symbol={day.symbol} size={32} />
+            <Text style={styles.dayRain}>{day.rain >= 0.1 ? `${day.rain.toFixed(1).replace('.', ',')} mm` : ''}</Text>
+            <Text style={styles.dayTemps}>
+              <Text style={styles.dayLow}>{temp(day.low)}</Text> / {temp(day.high)}
+            </Text>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
@@ -161,4 +226,9 @@ const styles = StyleSheet.create({
   hourTemp: { fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
   hourRain: { fontFamily: fonts.regular, fontSize: 10, color: colors.accent },
   credit: { fontFamily: fonts.regular, fontSize: 11, color: colors.muted },
+  dayRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#f6f7f9', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 },
+  dayName: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.text },
+  dayRain: { width: 56, textAlign: 'right', fontFamily: fonts.regular, fontSize: 12, color: colors.accent },
+  dayTemps: { width: 72, textAlign: 'right', fontFamily: fonts.semibold, fontSize: 15, color: colors.text },
+  dayLow: { fontFamily: fonts.regular, color: colors.muted },
 });

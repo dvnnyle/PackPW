@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { colors } from '../theme';
 import PageHeader from './PageHeader';
-import WeatherWidget from './WeatherWidget';
+import WeatherWidget, { WeekForecast } from './WeatherWidget';
 import { useLocation } from '../location';
 import { useRefresh } from '../refresh';
 
@@ -17,6 +17,7 @@ export default function VaerScreen() {
       >
         <PageHeader title="Været" subtitle={location.place} icon="partly-sunny-outline" />
         <WeatherWidget refreshKey={refreshKey} locationId={location.id} />
+        <WeekForecast refreshKey={refreshKey} locationId={location.id} />
       </ScrollView>
     </View>
   );
