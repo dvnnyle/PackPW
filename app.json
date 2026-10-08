@@ -2,7 +2,7 @@
   "expo": {
     "name": "Playworld Hub",
     "slug": "pack",
-    "version": "1.0.26",
+    "version": "1.0.27",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#010b36",
+        "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "no.playworld.dashboard",
