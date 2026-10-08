@@ -15,7 +15,7 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import { Syne_700Bold, Syne_800ExtraBold } from '@expo-google-fonts/syne';
-import { accentShadow, colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '../theme';
+import { accentShadow, colors, DESKTOP_BREAKPOINT, fonts } from '../theme';
 import { canSelfUpdate, checkForUpdate } from '../updates';
 import UpdateDialog from '../components/UpdateDialog';
 import LocationPicker from '../components/LocationPicker';
@@ -38,10 +38,10 @@ const TABS = [
   { name: 'vaer', href: '/vaer', label: 'Været', icon: 'partly-sunny' },
   { name: 'innstillinger', href: '/innstillinger', label: 'Innstillinger', icon: 'settings' },
 ];
-// Phone bottom bar: Oversikt in the middle of the five. The desktop sidebar keeps the order above.
+// Phone bottom bar: Oversikt in the middle of the five. The desktop top bar keeps the order above.
 const BOTTOM_TABS = ['bookinger', 'statistikk', 'index', 'vaer', 'innstillinger'].map((n) => TABS.find((t) => t.name === n));
 
-// One menu item; rendered as a sidebar row on desktop and a bottom-bar button on mobile.
+// One menu item; a pill in the desktop top bar, a bottom-bar button on mobile.
 // On the phone, Oversikt (the middle tab) sits in a raised blue circle.
 function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
   const color = isFocused ? colors.accent : colors.muted;
@@ -58,8 +58,8 @@ function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
       {...props}
       onPress={press}
       style={[
-        desktop ? styles.sideItem : styles.bottomItem,
-        desktop && isFocused && styles.sideItemActive,
+        desktop ? styles.navItem : styles.bottomItem,
+        desktop && isFocused && styles.navItemActive,
       ]}
     >
       {featured ? (
@@ -69,7 +69,7 @@ function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
       ) : (
         <Ionicons name={isFocused ? tab.icon : `${tab.icon}-outline`} size={desktop ? 20 : 24} color={color} />
       )}
-      <Text style={[desktop ? styles.sideLabel : styles.bottomLabel, { color }]}>{tab.label}</Text>
+      <Text style={[desktop ? styles.navLabel : styles.bottomLabel, { color }]}>{tab.label}</Text>
     </Pressable>
   );
 }
@@ -122,21 +122,23 @@ export default function RootLayout() {
   }
 
   // Visible menu. Its triggers have no href: they switch to the tabs registered in the hidden TabList below.
-  const menu = (
-    <View style={desktop ? styles.sidebar : [styles.bottomBar, { paddingBottom: insets.bottom + 6 }]}>
-      {desktop ? <Image source={logo} style={styles.sidebarLogo} resizeMode="contain" /> : null}
-      {desktop ? (
-        <View style={styles.sidebarLocation}>
-          <LocationPicker />
-          <RefreshButton />
-        </View>
-      ) : null}
-      {(desktop ? TABS : BOTTOM_TABS).map((tab) => (
-        <TabTrigger key={tab.name} name={tab.name} asChild>
-          <NavButton tab={tab} desktop={desktop} />
-        </TabTrigger>
-      ))}
+  const tabs = (desktop ? TABS : BOTTOM_TABS).map((tab) => (
+    <TabTrigger key={tab.name} name={tab.name} asChild>
+      <NavButton tab={tab} desktop={desktop} />
+    </TabTrigger>
+  ));
+  // Desktop: one bar across the top (logo | tabs | location + reload), so the pages get the full width.
+  const menu = desktop ? (
+    <View style={styles.topNav}>
+      <Image source={logo} style={styles.topNavLogo} resizeMode="contain" />
+      <View style={styles.topNavTabs}>{tabs}</View>
+      <View style={styles.topNavRight}>
+        <LocationPicker />
+        <RefreshButton />
+      </View>
     </View>
+  ) : (
+    <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 6 }]}>{tabs}</View>
   );
 
   return (
@@ -154,8 +156,8 @@ export default function RootLayout() {
         </TabList>
         <StatusBar style="dark" />
         <UpdateDialog update={update} onClose={() => setUpdate(null)} />
-        {/* Desktop: sidebar | content.  Mobile: logo bar / content / bottom tab bar. */}
-        <View style={[styles.frame, desktop && styles.frameDesktop]}>
+        {/* Desktop: top nav bar / content.  Mobile: logo bar / content / bottom tab bar. */}
+        <View style={styles.frame}>
           {desktop ? null : (
             <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
               {/* Picker on the left, logo centred over the full width. */}
@@ -192,7 +194,6 @@ const styles = StyleSheet.create({
   // minHeight: 0 lets these flex children shrink to the window on web, so the screen's ScrollView scrolls
   // instead of growing to its full content height.
   frame: { flex: 1, minHeight: 0 },
-  frameDesktop: { flexDirection: 'row' },
   hidden: { display: 'none' },
   content: { flex: 1, minHeight: 0, overflow: 'hidden' },
   // TabSlot's container defaults to flexShrink: 0, which lets screens grow past the window on web.
@@ -208,7 +209,6 @@ const styles = StyleSheet.create({
   topBarLogo: { width: 110, height: 48 },
   topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },
   topBarRight: { position: 'absolute', right: 12, top: 0, bottom: 0, justifyContent: 'center' },
-  sidebarLocation: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
 
   bottomBar: {
     flexDirection: 'row',
@@ -234,18 +234,20 @@ const styles = StyleSheet.create({
     ...accentShadow,
   },
 
-  sidebar: {
-    width: SIDEBAR_WIDTH,
+  topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    height: 72,
+    paddingHorizontal: 24,
     backgroundColor: colors.surface,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 20,
-    gap: 4,
-    flexDirection: 'column',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  sidebarLogo: { width: 140, height: 115, alignSelf: 'center', marginBottom: 16 },
-  sideItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 },
-  sideItemActive: { backgroundColor: colors.accentSoft },
-  sideLabel: { fontFamily: fonts.medium, fontSize: 15 },
+  topNavLogo: { width: 96, height: 60 },
+  topNavTabs: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 4 },
+  topNavRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  navItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999 },
+  navItemActive: { backgroundColor: colors.accentSoft },
+  navLabel: { fontFamily: fonts.medium, fontSize: 15 },
 });

@@ -26,11 +26,9 @@ export const colors = {
   dangerSoft: '#fef2f2',
 };
 
-// At this width and above the menu becomes a sidebar instead of a bottom tab bar.
+// At this width and above the menu becomes a top bar instead of a bottom tab bar.
 export const DESKTOP_BREAKPOINT = 768;
 
-// Width of the desktop sidebar menu; overlays (the booking modal) center on the content to its right.
-export const SIDEBAR_WIDTH = 240;
 
 // Drop shadow for the white section cards (iOS/web use shadow*, Android uses elevation).
 export const cardShadow = {

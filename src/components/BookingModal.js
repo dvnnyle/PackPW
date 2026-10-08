@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { cardShadow, colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '../theme';
+import { cardShadow, colors, fonts } from '../theme';
 import { DAYS, formatNumber, MONTHS, parseDate } from '../format';
 
 const TABS = [
@@ -60,8 +60,6 @@ function InfoTab({ booking, date }) {
 export default function BookingModal({ booking, date, onClose }) {
   const d = date ? parseDate(date) : null;
   const [tab, setTab] = useState('overview');
-  // On desktop, center over the content column, not over the sidebar too.
-  const desktop = useWindowDimensions().width >= DESKTOP_BREAKPOINT;
   const close = () => {
     setTab('overview');
     onClose();
@@ -69,7 +67,7 @@ export default function BookingModal({ booking, date, onClose }) {
   return (
     <Modal visible={!!booking} transparent animationType="fade" onRequestClose={close}>
       {/* Tapping the dimmed background closes the modal. */}
-      <Pressable style={[styles.backdrop, desktop && { paddingLeft: SIDEBAR_WIDTH + 16 }]} onPress={close} accessibilityLabel="Lukk">
+      <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Lukk">
         {booking ? (
           // Inner Pressable swallows taps so they don't reach the backdrop.
           <Pressable style={styles.card} onPress={() => {}}>
