@@ -30,7 +30,7 @@ export function setOnUnauthorized(handler) {
   onUnauthorized = handler;
 }
 
-// Password → { token, demo }. Throws with a Norwegian message for the login screen.
+// Password → { token }. Throws with a Norwegian message for the login screen.
 export async function login(password) {
   let response;
   try {
@@ -59,7 +59,7 @@ export function setApiLocation(id) {
 
 // `location` overrides the global one (Oversikt shows every location side by side in its pager).
 async function getJson(rawPath, fresh = false, onCached, location = currentLocation) {
-  const general = rawPath.startsWith('/api/health') || rawPath.startsWith('/api/app-version');
+  const general = ['/api/health', '/api/app-version', '/api/locations'].some((p) => rawPath.startsWith(p));
   const path = general ? rawPath : `${rawPath}${rawPath.includes('?') ? '&' : '?'}location=${location}`;
   if (onCached && !fresh) {
     const saved = readCache(path);
@@ -135,6 +135,11 @@ export function registerPushToken(token) {
 // Sends a test notification to every registered phone → { ok, phones }
 export function sendTestPush() {
   return postJson('/api/push/test', {});
+}
+
+// Which locations have their logins set on the server → [{ id, live }] (the others aren't connected yet).
+export function fetchLocations(onCached) {
+  return getJson('/api/locations', false, onCached);
 }
 
 // Backend health check → { status: "ok" }

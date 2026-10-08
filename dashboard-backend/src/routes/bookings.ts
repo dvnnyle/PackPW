@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { cached, wantsFresh } from '../cache/cache';
-import { config } from '../config';
+import { config, hasLogins } from '../config';
 import { findNextBookingDay, getBookings, getUpcomingBookingDays } from '../services/funbutler';
 import { isValidDate, locationOf } from '../utils/norway';
-import { isDemo, demoBookings, demoUpcoming } from '../services/demo';
 
 const router = Router();
 
@@ -15,13 +14,19 @@ router.get('/next', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "from" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (isDemo(req, res)) {
-    res.json({ date: demoUpcoming(from, 1, locationOf(req.query))[0]?.date ?? null, demo: true });
+  const location = locationOf(req.query);
+  if (!hasLogins(location)) {
+    res.status(404).json({ error: 'Location not connected yet' });
     return;
   }
 
   try {
-    const date = await cached(`next-booking:${from}`, config.cacheTtlMs, () => findNextBookingDay(from), wantsFresh(req.query));
+    const date = await cached(
+      `next-booking:${location}:${from}`,
+      config.cacheTtlMs,
+      () => findNextBookingDay(from, location),
+      wantsFresh(req.query),
+    );
     res.json({ date });
   } catch (err) {
     console.error('[bookings] FunButler next-day search failed:', err);
@@ -39,16 +44,17 @@ router.get('/upcoming', async (req, res) => {
     return;
   }
   const count = Math.min(30, Math.max(1, Number(req.query.count) || 10));
-  if (isDemo(req, res)) {
-    res.json({ days: demoUpcoming(from, count, locationOf(req.query)), demo: true });
+  const location = locationOf(req.query);
+  if (!hasLogins(location)) {
+    res.status(404).json({ error: 'Location not connected yet' });
     return;
   }
 
   try {
     const days = await cached(
-      `upcoming-bookings:${from}:${count}`,
+      `upcoming-bookings:${location}:${from}:${count}`,
       config.cacheTtlMs,
-      () => getUpcomingBookingDays(from, count),
+      () => getUpcomingBookingDays(from, count, location),
       wantsFresh(req.query),
     );
     res.json({ days });
@@ -65,13 +71,16 @@ router.get('/', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (isDemo(req, res)) {
-    res.json({ date, bookings: demoBookings(date, locationOf(req.query)), demo: true });
+  const location = locationOf(req.query);
+  if (!hasLogins(location)) {
+    res.status(404).json({ error: 'Location not connected yet' });
     return;
   }
 
   try {
-    res.json(await cached(`bookings:${date}`, config.cacheTtlMs, () => getBookings(date), wantsFresh(req.query)));
+    res.json(
+      await cached(`bookings:${location}:${date}`, config.cacheTtlMs, () => getBookings(date, location), wantsFresh(req.query)),
+    );
   } catch (err) {
     console.error('[bookings] FunButler failed:', err);
     res.status(502).json({ error: 'Failed to retrieve FunButler bookings' });

@@ -19,7 +19,7 @@ import WeatherWidget from './WeatherWidget';
 import BookingModal from './BookingModal';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { logos } from '../logos';
-import { LOCATIONS, useLocation } from '../location';
+import { useLocation } from '../location';
 import { useRefresh } from '../refresh';
 import { SkeletonCard, SkeletonRows } from './Skeleton';
 
@@ -422,8 +422,8 @@ function OversiktPage({ locationId }) {
 // (smooth, follows the finger) and changes the global location; choosing in the picker scrolls to that page.
 // All pages stay loaded, so the next location's numbers are already there when you swipe.
 export default function DashboardScreen() {
-  const { location, setLocationId } = useLocation();
-  const locations = LOCATIONS.filter((l) => l.available);
+  const { location, locations: all, setLocationId } = useLocation();
+  const locations = all.filter((l) => l.available);
   const index = Math.max(0, locations.findIndex((l) => l.id === location.id));
   const [size, setSize] = useState(null);
   const pager = useRef(null);

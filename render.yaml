@@ -42,11 +42,11 @@ services:
         value: Europe/Oslo
       - key: API_KEY
         generateValue: true
-      # App and website login: APP_PASSWORD = real data, DEMO_PASSWORD = demo data (optional).
+      # App and website login password.
       - key: APP_PASSWORD
         sync: false
-      - key: DEMO_PASSWORD
-        sync: false
+      # Triaden goes live when its logins are added: TRIADEN_SERVICE_A_USERNAME/_PASSWORD, TRIADEN_SERVICE_B_…,
+      # TRIADEN_FUNBUTLER_…, TRIADEN_PLANDAY_… (URLs fall back to Sørlandet's). No app build needed.
       - key: APP_VERSION_URL
         value: https://raw.githubusercontent.com/dvnnyle/PackPW/main/dashboard-backend/app-version.json
       - key: CACHE_TTL_SECONDS

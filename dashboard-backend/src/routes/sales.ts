@@ -1,18 +1,18 @@
 import { Router } from 'express';
+import { hasLogins } from '../config';
 import { cached, ttlForDate, wantsFresh } from '../cache/cache';
 import { getServiceAHourly, getServiceATopSellers } from '../services/serviceA';
 import { getServiceBHourly } from '../services/serviceB';
 import type { HourlySalesData } from '../types';
 import { isValidDate, locationOf, openingHours, todayInNorway } from '../utils/norway';
-import { isDemo, demoHourly } from '../services/demo';
 
 const router = Router();
 
-async function buildHourlySales(date: string): Promise<HourlySalesData> {
+async function buildHourlySales(date: string, location: string): Promise<HourlySalesData> {
   const [extandaGo, nordpay, sellers] = await Promise.allSettled([
-    getServiceAHourly(date),
-    getServiceBHourly(date),
-    getServiceATopSellers(date),
+    getServiceAHourly(date, location),
+    getServiceBHourly(date, location),
+    getServiceATopSellers(date, location),
   ]);
 
   const errors: string[] = [];
@@ -53,11 +53,14 @@ router.get('/hourly', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (isDemo(req, res)) {
-    res.json({ ...demoHourly(date, locationOf(req.query)), demo: true });
+  const location = locationOf(req.query);
+  if (!hasLogins(location)) {
+    res.status(404).json({ error: 'Location not connected yet' });
     return;
   }
-  res.json(await cached(`sales-hourly:${date}`, ttlForDate(date), () => buildHourlySales(date), wantsFresh(req.query)));
+  res.json(
+    await cached(`sales-hourly:${location}:${date}`, ttlForDate(date), () => buildHourlySales(date, location), wantsFresh(req.query)),
+  );
 });
 
 export default router;

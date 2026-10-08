@@ -1,19 +1,19 @@
 import { Router } from 'express';
+import { hasLogins } from '../config';
 import { cached, ttlForDate, wantsFresh } from '../cache/cache';
 import { getServiceAData } from '../services/serviceA';
 import { getServiceBData } from '../services/serviceB';
 import { getBookings } from '../services/funbutler';
 import type { DashboardData } from '../types';
 import { isValidDate, locationOf, todayInNorway } from '../utils/norway';
-import { isDemo, demoDashboard } from '../services/demo';
 
 const router = Router();
 
-async function buildDashboard(date: string): Promise<DashboardData> {
+async function buildDashboard(date: string, location: string): Promise<DashboardData> {
   const [serviceA, serviceB, bookings] = await Promise.allSettled([
-    getServiceAData(date),
-    getServiceBData(date),
-    getBookings(date),
+    getServiceAData(date, location),
+    getServiceBData(date, location),
+    getBookings(date, location),
   ]);
 
   const errors: string[] = [];
@@ -48,11 +48,14 @@ router.get('/', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (isDemo(req, res)) {
-    res.json({ ...demoDashboard(date, locationOf(req.query)), demo: true });
+  const location = locationOf(req.query);
+  if (!hasLogins(location)) {
+    res.status(404).json({ error: 'Location not connected yet' });
     return;
   }
-  res.json(await cached(`dashboard:${date}`, ttlForDate(date), () => buildDashboard(date), wantsFresh(req.query)));
+  res.json(
+    await cached(`dashboard:${location}:${date}`, ttlForDate(date), () => buildDashboard(date, location), wantsFresh(req.query)),
+  );
 });
 
 export default router;

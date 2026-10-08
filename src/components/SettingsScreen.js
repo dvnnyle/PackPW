@@ -78,7 +78,7 @@ export default function SettingsScreen() {
   const [checkResult, setCheckResult] = useState(null); // text under "Se etter oppdateringer"
   const [update, setUpdate] = useState(null);
   const [health, setHealth] = useState(null); // { ok, ms }
-  const { demo, logout } = useAuth();
+  const { logout } = useAuth();
   const [pushState, setPushState] = useState(null); // null | 'sending' | text after sending
 
   const testPush = async () => {
@@ -168,7 +168,7 @@ export default function SettingsScreen() {
           />
         </Group>
 
-        {Platform.OS !== 'web' && !demo ? (
+        {Platform.OS !== 'web' ? (
           <Group title="Varsler">
             <Row
               icon="notifications-outline"
@@ -185,7 +185,7 @@ export default function SettingsScreen() {
           <Row
             icon="log-out-outline"
             label="Logg ut"
-            detail={demo ? 'Innlogget med demopassord · eksempeldata' : 'Innlogget · ekte tall'}
+            detail="Innlogget"
             onPress={logout}
             last
           />

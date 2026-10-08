@@ -28,7 +28,9 @@ export function openingHours(date: string): { open: number; close: number } {
   return { open: 10, close: weekday === 0 || weekday === 6 ? 19 : 21 };
 }
 
-// The location a request asks for (?location=…), defaulting to Sørlandet.
+export const LOCATIONS = ['sorlandet', 'triaden'];
+
+// The location a request asks for (?location=…), defaulting to Sørlandet. Unknown ids count as Sørlandet.
 export function locationOf(query: Record<string, unknown>): string {
-  return typeof query.location === 'string' && query.location ? query.location : 'sorlandet';
+  return typeof query.location === 'string' && LOCATIONS.includes(query.location) ? query.location : 'sorlandet';
 }

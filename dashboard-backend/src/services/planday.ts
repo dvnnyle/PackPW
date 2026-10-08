@@ -3,7 +3,7 @@
 // "platform" access token (valid ~4 hours). We open the board in the browser only to log in and capture that
 // token, then call the same APIs directly with fetch, which takes well under a second.
 import { newContext, saveSession } from '../browser/browser';
-import { config, requireEnv } from '../config';
+import { config, locationEnv, sessionName } from '../config';
 import type { StaffShift } from '../types';
 
 const SESSION = 'planday';
@@ -27,15 +27,17 @@ interface RawShift {
   punch_out_date_time?: string;
 }
 
-let apiSession: ApiSession | null = null;
+// Per location.
+const apiSessions = new Map<string, ApiSession>();
 
-function baseUrl(): string {
-  return requireEnv('PLANDAY_URL').replace(/\/$/, '');
+function baseUrl(location: string): string {
+  return locationEnv(location, 'PLANDAY_URL').replace(/\/$/, '');
 }
 
 // Opens the schedule board (logging in if needed) and captures the API token from its first data request.
-async function openApiSession(): Promise<ApiSession> {
-  const context = await newContext(SESSION);
+async function openApiSession(location: string): Promise<ApiSession> {
+  const session = sessionName(SESSION, location);
+  const context = await newContext(session);
   try {
     const page = await context.newPage();
     let headers: Record<string, string> | null = null;
@@ -53,21 +55,21 @@ async function openApiSession(): Promise<ApiSession> {
     });
 
     // Planday sends us to id.planday.com when the saved login has expired.
-    await page.goto(`${baseUrl()}/schedule`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${baseUrl(location)}/schedule`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL((url) => url.pathname.startsWith('/schedule/') || url.hostname === 'id.planday.com', {
       timeout: config.browserTimeoutMs,
     });
     if (new URL(page.url()).hostname === 'id.planday.com') {
       await page.click('#cookie-consent-button', { timeout: 3_000 }).catch(() => {});
-      await page.fill('#Username', requireEnv('PLANDAY_USERNAME'));
-      await page.fill('#Password', requireEnv('PLANDAY_PASSWORD'));
+      await page.fill('#Username', locationEnv(location, 'PLANDAY_USERNAME'));
+      await page.fill('#Password', locationEnv(location, 'PLANDAY_PASSWORD'));
       await page.click('#MainLoginButton');
       try {
         await page.waitForURL((url) => url.pathname.startsWith('/schedule/'), { timeout: config.browserTimeoutMs });
       } catch {
         throw new Error('Planday login failed: still on the login page after submitting');
       }
-      await saveSession(context, SESSION);
+      await saveSession(context, session);
     }
 
     // The board lives at /schedule/{departmentId}/board/…
@@ -84,25 +86,30 @@ async function openApiSession(): Promise<ApiSession> {
   }
 }
 
-// Shared by concurrent calls, so three parallel requests trigger one browser login, not three.
-let pendingSession: Promise<ApiSession> | null = null;
-function ensureApiSession(): Promise<ApiSession> {
-  if (apiSession && Date.now() < apiSession.expiresAt) return Promise.resolve(apiSession);
-  pendingSession ??= openApiSession()
-    .then((session) => (apiSession = session))
-    .finally(() => (pendingSession = null));
-  return pendingSession;
+// Shared by concurrent calls (per location), so three parallel requests trigger one browser login, not three.
+const pendingSessions = new Map<string, Promise<ApiSession>>();
+function ensureApiSession(location: string): Promise<ApiSession> {
+  const current = apiSessions.get(location);
+  if (current && Date.now() < current.expiresAt) return Promise.resolve(current);
+  let pending = pendingSessions.get(location);
+  if (!pending) {
+    pending = openApiSession(location)
+      .then((session) => (apiSessions.set(location, session), session))
+      .finally(() => pendingSessions.delete(location));
+    pendingSessions.set(location, pending);
+  }
+  return pending;
 }
 
 // GET a Planday API URL; gets a fresh token when the current one has expired or is rejected.
-async function apiGet<T>(url: (departmentId: string) => string): Promise<T> {
+async function apiGet<T>(location: string, url: (departmentId: string) => string): Promise<T> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const session = await ensureApiSession();
+    const session = await ensureApiSession(location);
     const response = await fetch(url(session.departmentId), {
       headers: { ...session.headers, accept: 'application/json' },
     });
     if (response.status === 401 && attempt === 0) {
-      apiSession = null;
+      apiSessions.delete(location);
       continue;
     }
     if (!response.ok) throw new Error(`Planday request failed (HTTP ${response.status})`);
@@ -121,15 +128,17 @@ export function weekOf(date: string): { monday: string; sunday: string } {
 }
 
 // All shifts in the week containing `date`, with employee and group names, sorted by day and start time.
-export async function getStaffWeek(date: string): Promise<StaffShift[]> {
+export async function getStaffWeek(date: string, location = 'sorlandet'): Promise<StaffShift[]> {
   const { monday, sunday } = weekOf(date);
   const range = `from=${monday}&to=${sunday}`;
   const [{ shifts }, { employees }, { employee_groups: groups }] = await Promise.all([
-    apiGet<{ shifts: RawShift[] }>((dep) => `${SHIFT_API}/scheduling/departments/${dep}/day_based/shifts?${range}`),
+    apiGet<{ shifts: RawShift[] }>(location, (dep) => `${SHIFT_API}/scheduling/departments/${dep}/day_based/shifts?${range}`),
     apiGet<{ employees: { id: number; display_name: string }[] }>(
+      location,
       (dep) => `${PEOPLE_API}/scheduling/departments/${dep}/day_based/employees?${range}`,
     ),
     apiGet<{ employee_groups: { id: number; name: string }[] }>(
+      location,
       (dep) => `${PEOPLE_API}/scheduling/departments/${dep}/day_based/employee_groups?${range}`,
     ),
   ]);

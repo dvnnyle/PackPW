@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { cached, wantsFresh } from '../cache/cache';
-import { config } from '../config';
+import { config, hasLogins } from '../config';
 import { getStaffWeek, weekOf } from '../services/planday';
 import { isValidDate, locationOf, todayInNorway } from '../utils/norway';
-import { isDemo, demoStaff } from '../services/demo';
 
 const router = Router();
 
@@ -14,13 +13,19 @@ router.get('/', async (req, res) => {
     res.status(400).json({ error: 'Query parameter "date" must be a valid date in YYYY-MM-DD format' });
     return;
   }
-  if (isDemo(req, res)) {
-    res.json({ date, shifts: demoStaff(date, locationOf(req.query)), demo: true });
+  const location = locationOf(req.query);
+  if (!hasLogins(location)) {
+    res.status(404).json({ error: 'Location not connected yet' });
     return;
   }
   try {
     // One fetch covers the whole week, so other days in it come straight from the cache.
-    const week = await cached(`staff-week:${weekOf(date).monday}`, config.cacheTtlMs, () => getStaffWeek(date), wantsFresh(req.query));
+    const week = await cached(
+      `staff-week:${location}:${weekOf(date).monday}`,
+      config.cacheTtlMs,
+      () => getStaffWeek(date, location),
+      wantsFresh(req.query),
+    );
     res.json({ date, shifts: week.filter((s) => s.date === date) });
   } catch (err) {
     console.error('[staff] Planday failed:', err);

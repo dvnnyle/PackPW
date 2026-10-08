@@ -51,7 +51,7 @@ export async function sendPush(title: string, body: string): Promise<number> {
 
 const router = Router();
 
-// POST /api/push/register { token } — called by the app (real logins only; demo logins can't reach this route).
+// POST /api/push/register { token } — called by the app after login.
 router.post('/register', (req, res) => {
   const token = req.body?.token;
   if (typeof token !== 'string' || !TOKEN_PATTERN.test(token)) {

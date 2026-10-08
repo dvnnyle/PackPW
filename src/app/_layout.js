@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { usePathname } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -20,7 +19,7 @@ import { accentShadow, colors, DESKTOP_BREAKPOINT, fonts, SIDEBAR_WIDTH } from '
 import { canSelfUpdate, checkForUpdate } from '../updates';
 import UpdateDialog from '../components/UpdateDialog';
 import LocationPicker from '../components/LocationPicker';
-import { LocationProvider, useLocation } from '../location';
+import { LocationProvider } from '../location';
 import { RefreshProvider } from '../refresh';
 import RefreshButton from '../components/RefreshButton';
 import LoginScreen from '../components/LoginScreen';
@@ -72,27 +71,6 @@ function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
       )}
       <Text style={[desktop ? styles.sideLabel : styles.bottomLabel, { color }]}>{tab.label}</Text>
     </Pressable>
-  );
-}
-
-// The screens (each follows the chosen location itself). Demo locations get a yellow strip so made-up numbers
-// are never mistaken for real ones.
-function LocationContent() {
-  const { location } = useLocation();
-  const { demo } = useAuth();
-  // The weather is always real (MET Norway), so Været gets no demo strip.
-  const realPage = usePathname() === '/vaer';
-  return (
-    <>
-      {(demo || location.demo) && !realPage ? (
-        <View style={styles.demoBar}>
-          <Text style={styles.demoText}>
-            {demo ? 'Demoversjon – alle tall og navn er eksempeldata' : `Demodata – Playworld ${location.name} er ikke koblet til ennå`}
-          </Text>
-        </View>
-      ) : null}
-      <TabSlot style={styles.slot} />
-    </>
   );
 }
 
@@ -196,7 +174,7 @@ export default function RootLayout() {
           {desktop ? menu : null}
 
           <View style={styles.content}>
-            <LocationContent />
+            <TabSlot style={styles.slot} />
           </View>
 
           {desktop ? null : menu}
@@ -226,8 +204,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  demoBar: { backgroundColor: '#fef3c7', paddingVertical: 6, paddingHorizontal: 12, alignItems: 'center' },
-  demoText: { fontFamily: fonts.semibold, fontSize: 12, color: '#92400e', textAlign: 'center' },
   topBarRow: { height: 52, justifyContent: 'center', alignItems: 'center' },
   topBarLogo: { width: 110, height: 48 },
   topBarLeft: { position: 'absolute', left: 12, top: 0, bottom: 0, justifyContent: 'center' },

@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { cardShadow, colors, fonts } from '../theme';
-import { LOCATIONS, useLocation } from '../location';
+import { useLocation } from '../location';
 
 // "Sørlandet ▾" pill; tapping it lists the locations. Locations without backend logins yet are shown greyed out.
 export default function LocationPicker() {
-  const { location, setLocationId } = useLocation();
+  const { location, locations, setLocationId } = useLocation();
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,7 +26,7 @@ export default function LocationPicker() {
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet}>
             <Text style={styles.title}>Velg lokasjon</Text>
-            {LOCATIONS.map((l) => {
+            {locations.map((l) => {
               const selected = l.id === location.id;
               return (
                 <Pressable
@@ -44,8 +44,6 @@ export default function LocationPicker() {
                     <Text style={styles.soon}>Kommer snart</Text>
                   ) : selected ? (
                     <Ionicons name="checkmark" size={18} color={colors.accent} />
-                  ) : l.demo ? (
-                    <Text style={styles.soon}>Demodata</Text>
                   ) : null}
                 </Pressable>
               );

@@ -5,7 +5,7 @@ import { useAuth } from '../auth';
 
 const logo = require('../../assets/branding/logo.png');
 
-// Shown on the phone until the user has logged in with the app password (or the demo password).
+// Shown on the phone until the user has logged in with the app password.
 export default function LoginScreen() {
   const { login } = useAuth();
   const [password, setPassword] = useState('');

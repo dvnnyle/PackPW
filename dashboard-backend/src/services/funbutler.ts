@@ -2,7 +2,7 @@
 // FunButler's calendar loads structured JSON from its own API, so we call that directly
 // instead of driving a browser: POST /api/authenticate sets an "access-token" cookie,
 // then GET /api/client/{clientId}/bookings/by-day/{date} returns that day's bookings.
-import { requireEnv } from '../config';
+import { locationEnv } from '../config';
 import type { BirthdayChild, Booking, BookingsResult } from '../types';
 
 interface Session {
@@ -26,19 +26,19 @@ interface RawBooking {
   paymentInfo?: unknown[];
 }
 
-let session: Session | null = null;
+const sessions = new Map<string, Session>(); // per location
 
-function baseUrl(): string {
-  return requireEnv('FUNBUTLER_URL').replace(/\/$/, '');
+function baseUrl(location: string): string {
+  return locationEnv(location, 'FUNBUTLER_URL').replace(/\/$/, '');
 }
 
-async function login(): Promise<Session> {
-  const response = await fetch(`${baseUrl()}/api/authenticate`, {
+async function login(location: string): Promise<Session> {
+  const response = await fetch(`${baseUrl(location)}/api/authenticate`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', accept: 'application/json' },
     body: JSON.stringify({
-      username: requireEnv('FUNBUTLER_USERNAME'),
-      password: requireEnv('FUNBUTLER_PASSWORD'),
+      username: locationEnv(location, 'FUNBUTLER_USERNAME'),
+      password: locationEnv(location, 'FUNBUTLER_PASSWORD'),
     }),
   });
   const body = (await response.json().catch(() => null)) as { succeeded?: boolean; clientId?: string } | null;
@@ -54,14 +54,18 @@ async function login(): Promise<Session> {
 }
 
 // Calls the API with the current session; logs in again once if the session has expired.
-async function apiGet<T>(path: (clientId: string) => string): Promise<T> {
+async function apiGet<T>(location: string, path: (clientId: string) => string): Promise<T> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    session ??= await login();
-    const response = await fetch(`${baseUrl()}${path(session.clientId)}`, {
+    let session = sessions.get(location);
+    if (!session) {
+      session = await login(location);
+      sessions.set(location, session);
+    }
+    const response = await fetch(`${baseUrl(location)}${path(session.clientId)}`, {
       headers: { accept: 'application/json', cookie: session.cookie },
     });
     if (response.status === 401 && attempt === 0) {
-      session = null;
+      sessions.delete(location);
       continue;
     }
     if (!response.ok) {
@@ -118,13 +122,13 @@ function addDays(date: string, days: number): string {
 }
 
 // Finds the first day on or after `fromDate` that has bookings, checking a week at a time.
-export async function findNextBookingDay(fromDate: string, maxDays = 90): Promise<string | null> {
+export async function findNextBookingDay(fromDate: string, location = 'sorlandet', maxDays = 90): Promise<string | null> {
   const BATCH = 7;
   for (let offset = 0; offset < maxDays; offset += BATCH) {
     const days = Array.from({ length: Math.min(BATCH, maxDays - offset) }, (_, i) => addDays(fromDate, offset + i));
     const counts = await Promise.all(
       days.map((day) =>
-        apiGet<unknown[]>((clientId) => `/api/client/${clientId}/bookings/by-day/${day}`).then((list) => list.length),
+        apiGet<unknown[]>(location, (clientId) => `/api/client/${clientId}/bookings/by-day/${day}`).then((list) => list.length),
       ),
     );
     const index = counts.findIndex((count) => count > 0);
@@ -134,19 +138,24 @@ export async function findNextBookingDay(fromDate: string, maxDays = 90): Promis
 }
 
 // The first `count` days on or after `fromDate` (within `maxDays`) that have bookings, checking a week at a time.
-export async function getUpcomingBookingDays(fromDate: string, count = 10, maxDays = 90): Promise<BookingsResult[]> {
+export async function getUpcomingBookingDays(
+  fromDate: string,
+  count = 10,
+  location = 'sorlandet',
+  maxDays = 90,
+): Promise<BookingsResult[]> {
   const BATCH = 7;
   const found: BookingsResult[] = [];
   for (let offset = 0; offset < maxDays && found.length < count; offset += BATCH) {
     const days = Array.from({ length: Math.min(BATCH, maxDays - offset) }, (_, i) => addDays(fromDate, offset + i));
-    const results = await Promise.all(days.map(getBookings));
+    const results = await Promise.all(days.map((day) => getBookings(day, location)));
     found.push(...results.filter((r) => r.bookings.length > 0));
   }
   return found.slice(0, count);
 }
 
-export async function getBookings(date: string): Promise<BookingsResult> {
-  const raw = await apiGet<RawBooking[]>((clientId) => `/api/client/${clientId}/bookings/by-day/${date}`);
+export async function getBookings(date: string, location = 'sorlandet'): Promise<BookingsResult> {
+  const raw = await apiGet<RawBooking[]>(location, (clientId) => `/api/client/${clientId}/bookings/by-day/${date}`);
   const bookings = raw.map(normalize).sort((a, b) => a.time.localeCompare(b.time));
   return { date, bookings };
 }

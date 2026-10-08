@@ -55,3 +55,9 @@ CLAUDE.md
 # Firebase (push notifications); provided to EAS as a file variable
 google-services.json
 google..and..firebase/
+
+# Local notes and tool folders (may hold account details)
+.kronik/
+googleplay_test.md
+ios_setup_test.md
+fixes.md

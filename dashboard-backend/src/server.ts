@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express';
 import cors from 'cors';
-import { config } from './config';
+import { config, hasLogins } from './config';
 import { closeBrowser } from './browser/browser';
 import bookingsRouter from './routes/bookings';
 import dashboardRouter from './routes/dashboard';
@@ -17,7 +17,7 @@ import { startNotificationSchedule } from './notifications';
 import { getStaffWeek } from './services/planday';
 import { getServiceAData } from './services/serviceA';
 import { getServiceBData } from './services/serviceB';
-import { todayInNorway } from './utils/norway';
+import { LOCATIONS, todayInNorway } from './utils/norway';
 
 const app = express();
 app.use(cors());
@@ -33,16 +33,10 @@ app.get('/personvern', (_req, res) => res.sendFile(path.resolve('public/personve
 
 // On the open internet (Render) the API returns sales figures and customer contact details, so it requires
 // the app login (Bearer token, the same on the phone and the website) or the old app API key. Locally, with no API_KEY set, it stays
-// open for development. Demo logins only get demo data, and only on the app's data routes.
-const DEMO_ROUTES = /^\/(dashboard|sales|bookings|staff|weather|app-version)(\/|$)/;
+// open for development.
 const requireApiKey: RequestHandler = (req, res, next) => {
   const [scheme, token] = (req.get('authorization') ?? '').split(' ');
-  const session = scheme === 'Bearer' && token ? verifyToken(token) : null;
-  if (session && !session.demo) return next();
-  if (session?.demo && DEMO_ROUTES.test(req.path)) {
-    res.locals.demo = true;
-    return next();
-  }
+  if (scheme === 'Bearer' && token && verifyToken(token)) return next();
   if (!config.apiKey) return next();
   const key = req.get('x-api-key') ?? '';
   if (sameSecret(key, config.apiKey)) return next();
@@ -58,6 +52,12 @@ app.use('/api/staff', staffRouter);
 app.use('/api/app-version', appVersionRouter);
 app.use('/api/cron', cronRouter);
 app.use('/api/push', pushRouter);
+
+// GET /api/locations → [{ id, live }]: which locations have their logins set (the others aren't connected yet).
+// The app reads this, so a location goes live as soon as its variables are added on Render.
+app.get('/api/locations', (_req, res) => {
+  res.json(LOCATIONS.map((id) => ({ id, live: hasLogins(id) })));
+});
 
 // The website (Expo web export in ./web, built on Render). The files themselves hold no data; like the phone app
 // it shows the login screen, and every API call needs the login token.
@@ -84,11 +84,11 @@ const server = app.listen(config.port, () => {
   startNotificationSchedule();
   // Log in to every service in the background so the first app request doesn't wait for a browser login.
   const today = todayInNorway();
-  const warmUps: [string, Promise<unknown>][] = [
-    ['Wallmob', getServiceAData(today)],
-    ['NordPay', getServiceBData(today)],
-    ['Planday', getStaffWeek(today)],
-  ];
+  const warmUps: [string, Promise<unknown>][] = LOCATIONS.filter(hasLogins).flatMap((loc): [string, Promise<unknown>][] => [
+    [`Wallmob (${loc})`, getServiceAData(today, loc)],
+    [`NordPay (${loc})`, getServiceBData(today, loc)],
+    [`Planday (${loc})`, getStaffWeek(today, loc)],
+  ]);
   for (const [name, warmUp] of warmUps) {
     warmUp.catch((err) => console.error(`[startup] ${name} warm-up failed:`, err.message));
   }
@@ -108,7 +108,11 @@ const server = app.listen(config.port, () => {
     setInterval(() => {
       const today = todayInNorway();
       const headers = config.apiKey ? { 'x-api-key': config.apiKey } : undefined;
-      for (const path of [`/api/dashboard?date=${today}`, `/api/sales/hourly?date=${today}`]) {
+      const paths = LOCATIONS.filter(hasLogins).flatMap((loc) => [
+        `/api/dashboard?date=${today}&location=${loc}`,
+        `/api/sales/hourly?date=${today}&location=${loc}`,
+      ]);
+      for (const path of paths) {
         fetch(`http://127.0.0.1:${config.port}${path}&fresh=1`, { headers }).catch((err) =>
           console.error('[live] Refresh of today failed:', err.message),
         );

@@ -2,12 +2,9 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
 import { config } from './config';
 
-// App login: one shared password. APP_PASSWORD gives real data, DEMO_PASSWORD demo data only (for Google's
-// reviewers and outside testers). The app gets a token signed with that password, so changing a password on
-// Render logs out every phone that used it.
+// App and website login: one shared password (APP_PASSWORD). The app gets a token signed with that password, so
+// changing it on Render logs out every phone and browser.
 const TOKEN_DAYS = 90;
-
-export type Session = { demo: boolean };
 
 // Constant-time comparison, so response timing doesn't reveal how much of a secret was right.
 export function sameSecret(given: string, expected: string): boolean {
@@ -16,46 +13,35 @@ export function sameSecret(given: string, expected: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-const sign = (secret: string, body: string) => createHmac('sha256', secret).update(body).digest('base64url');
+const sign = (body: string) => createHmac('sha256', config.appPassword).update(body).digest('base64url');
 
-function secretFor(kind: string): string {
-  return kind === 'demo' ? config.demoPassword : kind === 'real' ? config.appPassword : '';
+// Token: "real.<expiry ms>.<signature>" (the "real" prefix keeps tokens from earlier versions valid).
+function makeToken(): string {
+  const body = `real.${Date.now() + TOKEN_DAYS * 86_400_000}`;
+  return `${body}.${sign(body)}`;
 }
 
-// Token: "<real|demo>.<expiry ms>.<signature>".
-function makeToken(kind: 'real' | 'demo'): string {
-  const body = `${kind}.${Date.now() + TOKEN_DAYS * 86_400_000}`;
-  return `${body}.${sign(secretFor(kind), body)}`;
-}
-
-export function verifyToken(token: string): Session | null {
+export function verifyToken(token: string): boolean {
   const [kind, expires, signature] = token.split('.');
-  const secret = secretFor(kind);
-  if (!secret || !signature || Number(expires) < Date.now()) return null;
-  return sameSecret(signature, sign(secret, `${kind}.${expires}`)) ? { demo: kind === 'demo' } : null;
+  if (!config.appPassword || kind !== 'real' || !signature || Number(expires) < Date.now()) return false;
+  return sameSecret(signature, sign(`${kind}.${expires}`));
 }
 
 const router = Router();
 
-// POST /api/login { password } → { token, demo }
+// POST /api/login { password } → { token }
 router.post('/', (req, res) => {
-  // Local development (no passwords, no API key): the API is open anyway, so any password logs in.
+  // Local development (no password, no API key): the API is open anyway, so any password logs in.
   if (!config.appPassword && !config.apiKey) {
-    res.json({ token: 'dev', demo: false });
+    res.json({ token: 'dev' });
     return;
   }
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
-  const kind =
-    config.appPassword && sameSecret(password, config.appPassword)
-      ? 'real'
-      : config.demoPassword && sameSecret(password, config.demoPassword)
-        ? 'demo'
-        : null;
-  if (!kind) {
+  if (!config.appPassword || !sameSecret(password, config.appPassword)) {
     res.status(401).json({ error: 'Wrong password' });
     return;
   }
-  res.json({ token: makeToken(kind), demo: kind === 'demo' });
+  res.json({ token: makeToken() });
 });
 
 export default router;

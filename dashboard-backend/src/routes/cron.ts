@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { config } from "../config";
-import { todayInNorway } from "../utils/norway";
+import { config, hasLogins } from "../config";
+import { LOCATIONS, todayInNorway } from "../utils/norway";
 
 const router = Router();
 
@@ -14,20 +14,24 @@ router.get("/warmup", async (_req, res) => {
   const yesterday = new Date(Date.parse(`${today}T12:00:00Z`) - 86_400_000)
     .toISOString()
     .slice(0, 10);
-  const paths = [
+  // Every location that has its own logins (the others aren't connected yet).
+  const live = LOCATIONS.filter(hasLogins);
+  const perLocation = (list: string[]) =>
+    live.flatMap((loc) => list.map((p) => `${p}${p.includes("?") ? "&" : "?"}location=${loc}`));
+  const paths = perLocation([
     `/api/dashboard?date=${today}`,
     `/api/sales/hourly?date=${today}`,
     `/api/staff?date=${today}`,
     `/api/bookings?date=${today}`,
     `/api/bookings/upcoming?from=${today}&count=10`,
     "/api/weather",
-  ];
+  ]);
   // Yesterday too, so "I går" on Oversikt and Statistikk is instant. It no longer changes, so it goes through
   // the normal cache (past days are kept for hours) instead of being fetched live every time.
-  const cachedPaths = [
+  const cachedPaths = perLocation([
     `/api/dashboard?date=${yesterday}`,
     `/api/sales/hourly?date=${yesterday}`,
-  ];
+  ]);
   const headers = config.apiKey ? { "x-api-key": config.apiKey } : undefined;
   const started = Date.now();
 
