@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Head from 'expo-router/head';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -134,7 +135,7 @@ export default function RootLayout() {
         <Image source={logo} style={styles.topNavLogo} resizeMode="contain" />
         <View>
           <Text style={styles.topNavTitle}>Playworld</Text>
-          <Text style={[styles.topNavTitle, styles.topNavSub]}>Hub</Text>
+          <Text style={styles.topNavTitle}>Hub</Text>
         </View>
       </View>
       <View style={styles.topNavTabs}>{tabs}</View>
@@ -149,6 +150,10 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+    {/* Browser tab title on the website (same on every page). */}
+    <Head>
+      <title>Playworld Hub</title>
+    </Head>
     <AuthGate>
     <LocationProvider>
     <RefreshProvider>
@@ -253,7 +258,6 @@ const styles = StyleSheet.create({
   topNavBrand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   topNavLogo: { width: 52, height: 52, borderRadius: 14 },
   topNavTitle: { fontFamily: fonts.headingBold, fontSize: 18, lineHeight: 20, color: colors.text },
-  topNavSub: { color: '#ffc327' },
   topNavTabs: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 4 },
   topNavRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999 },
