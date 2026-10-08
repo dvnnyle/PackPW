@@ -38,7 +38,8 @@ export async function sendPush(title: string, body: string): Promise<number> {
     const response = await fetch(EXPO_PUSH_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(batch.map((to) => ({ to, title, body, channelId: 'default', sound: 'default' }))),
+      // priority high: delivered right away with sound, even when the phone is idle (Android "normal" can be held back).
+      body: JSON.stringify(batch.map((to) => ({ to, title, body, channelId: 'default', sound: 'default', priority: 'high' }))),
     });
     if (!response.ok) throw new Error(`Expo push returned ${response.status}`);
     const { data } = (await response.json()) as {
