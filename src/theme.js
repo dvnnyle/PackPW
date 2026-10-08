@@ -21,6 +21,9 @@ export const colors = {
   // FunButler's brand red, for FunButler screens (Bookinger, booking details).
   funbutler: '#f33c2c',
   funbutlerSoft: '#fee4e2',
+  // Destructive actions (Logg ut).
+  danger: '#dc2626',
+  dangerSoft: '#fef2f2',
 };
 
 // At this width and above the menu becomes a sidebar instead of a bottom tab bar.

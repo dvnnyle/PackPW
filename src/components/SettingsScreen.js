@@ -181,16 +181,6 @@ export default function SettingsScreen() {
           </Group>
         ) : null}
 
-        <Group title="Konto">
-          <Row
-            icon="log-out-outline"
-            label="Logg ut"
-            detail="Innlogget"
-            onPress={logout}
-            last
-          />
-        </Group>
-
         <Group title="Datakilder">
           {SOURCES.map((s, i) => (
             <Row
@@ -209,6 +199,15 @@ export default function SettingsScreen() {
           <Row icon="business-outline" label="Playworld Triaden" detail="Triaden Lørenskog Storsenter, Gamleveien 88, 1461 Rasta" />
           <Row icon="refresh-outline" label="Oppdatering av tall" detail="Automatisk hvert minutt, eller med oppdater-knappen" last />
         </Group>
+
+        <Pressable
+          style={({ pressed }) => [styles.logout, pressed && styles.logoutPressed]}
+          onPress={logout}
+          accessibilityRole="button"
+        >
+          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+          <Text style={styles.logoutText}>Logg ut</Text>
+        </Pressable>
 
         <Text style={styles.credit}>
           Dvnny |{' '}
@@ -253,6 +252,20 @@ const styles = StyleSheet.create({
   rowDetail: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   rowValue: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted },
   disabled: { color: colors.muted },
+  logout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 14,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerSoft,
+  },
+  logoutPressed: { opacity: 0.6 },
+  logoutText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.danger },
   credit: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 8 },
   creditLink: { fontFamily: fonts.semibold, color: colors.accent },
 });
