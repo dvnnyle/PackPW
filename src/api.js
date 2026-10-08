@@ -43,7 +43,6 @@ export async function login(password) {
     throw new Error('Får ikke kontakt med serveren');
   }
   if (response.status === 401) throw new Error('Feil passord');
-  if (response.status === 429) throw new Error('For mange forsøk, prøv igjen om 15 minutter');
   if (!response.ok) throw new Error(`Serveren svarte ${response.status}`);
   return response.json();
 }

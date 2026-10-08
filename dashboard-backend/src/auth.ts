@@ -34,23 +34,10 @@ export function verifyToken(token: string): Session | null {
   return sameSecret(signature, sign(secret, `${kind}.${expires}`)) ? { demo: kind === 'demo' } : null;
 }
 
-// Wrong passwords per IP: after 10 in 15 minutes, logins from that IP are refused until the window ends.
-// ponytail: in-memory, resets on restart; fine for one small instance.
-const failures = new Map<string, { count: number; until: number }>();
-const MAX_FAILURES = 10;
-const WINDOW_MS = 15 * 60_000;
-
 const router = Router();
 
 // POST /api/login { password } → { token, demo }
 router.post('/', (req, res) => {
-  const ip = req.ip ?? '';
-  const now = Date.now();
-  const f = failures.get(ip);
-  if (f && f.until > now && f.count >= MAX_FAILURES) {
-    res.status(429).json({ error: 'Too many attempts, try again later' });
-    return;
-  }
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
   const kind =
     config.appPassword && sameSecret(password, config.appPassword)
@@ -59,11 +46,9 @@ router.post('/', (req, res) => {
         ? 'demo'
         : null;
   if (!kind) {
-    failures.set(ip, { count: f && f.until > now ? f.count + 1 : 1, until: f && f.until > now ? f.until : now + WINDOW_MS });
     res.status(401).json({ error: 'Wrong password' });
     return;
   }
-  failures.delete(ip);
   res.json({ token: makeToken(kind), demo: kind === 'demo' });
 });
 

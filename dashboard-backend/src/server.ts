@@ -20,9 +20,6 @@ import { getServiceBData } from './services/serviceB';
 import { todayInNorway } from './utils/norway';
 
 const app = express();
-// Render sits behind a proxy: use the visitor's real IP (the login's attempt limit counts per IP).
-app.set('trust proxy', 1);
-
 app.use(cors());
 app.use(express.json());
 
