@@ -37,18 +37,8 @@ function sameSecret(given: string, expected: string): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-// The website's login: the browser's own username/password box (HTTP Basic Auth). After logging in, the browser
-// sends it with every request to this address, including the website's own API calls.
-function webLoginOk(req: express.Request): boolean {
-  if (!config.webPassword) return false;
-  const [scheme, encoded] = (req.get('authorization') ?? '').split(' ');
-  if (scheme !== 'Basic' || !encoded) return false;
-  const [user, ...rest] = Buffer.from(encoded, 'base64').toString('utf8').split(':');
-  return sameSecret(user, config.webUser) && sameSecret(rest.join(':'), config.webPassword);
-}
-
 // On the open internet (Render) the API returns sales figures and customer contact details, so it requires
-// the app login (Bearer token), the app's API key or the website login. Locally, with no API_KEY set, it stays
+// the app login (Bearer token, the same on the phone and the website) or the old app API key. Locally, with no API_KEY set, it stays
 // open for development. Demo logins and the demo key only get demo data, and only on the app's data routes.
 const DEMO_ROUTES = /^\/(dashboard|sales|bookings|staff|weather|app-version)(\/|$)/;
 const requireApiKey: RequestHandler = (req, res, next) => {
@@ -61,7 +51,7 @@ const requireApiKey: RequestHandler = (req, res, next) => {
   }
   if (!config.apiKey) return next();
   const key = req.get('x-api-key') ?? '';
-  if (sameSecret(key, config.apiKey) || webLoginOk(req)) return next();
+  if (sameSecret(key, config.apiKey)) return next();
   // The Play build's key: demo data only, and only on the app's data routes (not /api/test or /api/cron).
   if (config.demoApiKey && sameSecret(key, config.demoApiKey) && DEMO_ROUTES.test(req.path)) {
     res.locals.demo = true;
@@ -80,15 +70,10 @@ app.use('/api/staff', staffRouter);
 app.use('/api/app-version', appVersionRouter);
 app.use('/api/cron', cronRouter);
 
-// The website (Expo web export in ./web, built on Render), behind the browser login. Not served at all
-// without WEB_PASSWORD, so it can never go online unprotected.
+// The website (Expo web export in ./web, built on Render). The files themselves hold no data; like the phone app
+// it shows the login screen, and every API call needs the login token.
 const WEB_DIR = path.resolve('web');
-if (fs.existsSync(WEB_DIR) && config.webPassword) {
-  app.use((req, res, next) => {
-    if (webLoginOk(req)) return next();
-    res.set('WWW-Authenticate', 'Basic realm="Playworld", charset="UTF-8"');
-    res.status(401).send('Innlogging kreves');
-  });
+if (fs.existsSync(WEB_DIR)) {
   app.use(express.static(WEB_DIR));
   // App routes like /bookinger and /statistikk all load the single-page app.
   app.use((req, res, next) => (req.method === 'GET' && !req.path.startsWith('/api/') ? res.sendFile(path.join(WEB_DIR, 'index.html')) : next()));

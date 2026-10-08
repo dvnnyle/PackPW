@@ -38,6 +38,11 @@ const router = Router();
 
 // POST /api/login { password } → { token, demo }
 router.post('/', (req, res) => {
+  // Local development (no passwords, no API key): the API is open anyway, so any password logs in.
+  if (!config.appPassword && !config.apiKey) {
+    res.json({ token: 'dev', demo: false });
+    return;
+  }
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
   const kind =
     config.appPassword && sameSecret(password, config.appPassword)

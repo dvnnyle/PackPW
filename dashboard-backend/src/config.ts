@@ -11,9 +11,6 @@ export const config = {
   // App login (see auth.ts): APP_PASSWORD = real data, DEMO_PASSWORD = demo data only. Empty = that login is off.
   appPassword: process.env.APP_PASSWORD ?? '',
   demoPassword: process.env.DEMO_PASSWORD ?? '',
-  // Login for the website (browser login box / HTTP Basic Auth). The website is only served when WEB_PASSWORD is set.
-  webUser: process.env.WEB_USER ?? 'playworld',
-  webPassword: process.env.WEB_PASSWORD ?? '',
   // Refresh today's data in the background every N minutes (0 = off). On by default when deployed
   // (API_KEY set), so the cache stays warm without an external cron job.
   warmupMinutes: Number(process.env.WARMUP_INTERVAL_MINUTES ?? (process.env.API_KEY ? 10 : 0)),

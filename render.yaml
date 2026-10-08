@@ -7,7 +7,7 @@ services:
     # (PLAYWRIGHT_BROWSERS_PATH=0) so it is still there when the service runs.
     # Plan B if Chromium can't start here: switch to `runtime: docker` with dashboard-backend/Dockerfile.
     # The build also exports the Expo app for the web into dashboard-backend/web; the backend serves it
-    # (behind the WEB_PASSWORD browser login) from the same address as the API.
+    # (with the same login screen as the phone app) from the same address as the API.
     runtime: node
     rootDir: .
     buildCommand: >-
@@ -42,8 +42,10 @@ services:
         value: Europe/Oslo
       - key: API_KEY
         generateValue: true
-      # Website login (browser login box). Username defaults to "playworld"; the website stays offline without a password.
-      - key: WEB_PASSWORD
+      # App and website login: APP_PASSWORD = real data, DEMO_PASSWORD = demo data (optional).
+      - key: APP_PASSWORD
+        sync: false
+      - key: DEMO_PASSWORD
         sync: false
       - key: APP_VERSION_URL
         value: https://raw.githubusercontent.com/dvnnyle/PackPW/main/dashboard-backend/app-version.json

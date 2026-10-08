@@ -8,7 +8,7 @@ const BACKEND_PORT = 3000;
 // IP address the Expo dev server is running on. Set EXPO_PUBLIC_API_URL to override
 // (e.g. the Render URL in production).
 function getApiUrl() {
-  // The website is served by the backend itself, so it calls the same address (and the browser login applies).
+  // The website is served by the backend itself, so it calls the same address.
   if (Platform.OS === 'web' && !__DEV__) return globalThis.location?.origin ?? '';
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/$/, '');
@@ -19,8 +19,8 @@ function getApiUrl() {
 
 export const API_URL = getApiUrl();
 
-// The Render backend only answers logged-in requests: the app sends the token from the login screen (see auth.js);
-// the website is covered by the browser login. Locally the backend is open and no token is needed.
+// The Render backend only answers logged-in requests: the app and the website send the token from the login screen
+// (see auth.js). Locally the backend is open and any password logs in.
 let authToken = null;
 let onUnauthorized = null;
 export function setAuthToken(token) {

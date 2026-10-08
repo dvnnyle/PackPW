@@ -22,7 +22,7 @@ import { LocationProvider, useLocation } from '../location';
 import { RefreshProvider } from '../refresh';
 import RefreshButton from '../components/RefreshButton';
 import LoginScreen from '../components/LoginScreen';
-import { AuthProvider, needsLogin, useAuth } from '../auth';
+import { AuthProvider, useAuth } from '../auth';
 
 // Keep the splash screen up until the fonts are loaded.
 SplashScreen.preventAutoHideAsync();
@@ -73,10 +73,10 @@ function LocationContent() {
   );
 }
 
-// The app until the user has logged in (phone only; the website has the browser login).
+// The login screen until the user has logged in (phone and website alike).
 function AuthGate({ children }) {
   const { token } = useAuth();
-  if (needsLogin && !token) {
+  if (!token) {
     return (
       <>
         <StatusBar style="dark" />
