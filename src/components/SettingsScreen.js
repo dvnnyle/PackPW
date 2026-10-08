@@ -119,7 +119,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <PageHeader
           title="Innstillinger"
-          subtitle={installed.version ? `Versjon ${versionLabel(installed.version, installed.versionCode)}` : 'Playworld Dashboard'}
+          subtitle={installed.version ? `Versjon ${versionLabel(installed.version, installed.versionCode)}` : 'Playworld Hub'}
           icon="settings-outline"
         />
 
