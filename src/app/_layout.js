@@ -54,7 +54,7 @@ function NavButton({ tab, desktop, isFocused, ...props }) {
       ]}
     >
       {featured ? (
-        <View style={[styles.featured, !isFocused && styles.featuredIdle]}>
+        <View style={styles.featured}>
           <Ionicons name={tab.icon} size={30} color="#fff" />
         </View>
       ) : (
@@ -245,7 +245,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...accentShadow,
   },
-  featuredIdle: { opacity: 0.85 },
 
   sidebar: {
     width: SIDEBAR_WIDTH,
