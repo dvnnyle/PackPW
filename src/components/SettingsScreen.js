@@ -177,15 +177,9 @@ export default function SettingsScreen() {
 
         <Group title="Om">
           <Row icon="business-outline" label="Playworld Sørlandet" detail="Barstølveien 35, 4636 Kristiansand" />
-          <Row icon="refresh-outline" label="Oppdatering av tall" detail="Automatisk hvert minutt, eller med oppdater-knappen" last />
+          <Row icon="refresh-outline" label="Oppdatering av tall" detail="Automatisk hvert minutt, eller med oppdater-knappen" />
+          <Row icon="code-slash-outline" label="Laget av Dvnny" detail="dvnny.no" onPress={() => Linking.openURL('https://dvnny.no')} last />
         </Group>
-
-        <Text style={styles.credit}>
-          Laget av Dvnny |{' '}
-          <Text style={styles.creditLink} onPress={() => Linking.openURL('https://dvnny.no')} accessibilityRole="link">
-            dvnny.no
-          </Text>
-        </Text>
       </ScrollView>
 
       <UpdateDialog update={update} onClose={() => setUpdate(null)} />
@@ -223,6 +217,4 @@ const styles = StyleSheet.create({
   rowDetail: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   rowValue: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted },
   disabled: { color: colors.muted },
-  credit: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 8 },
-  creditLink: { fontFamily: fonts.semibold, color: colors.accent },
 });
