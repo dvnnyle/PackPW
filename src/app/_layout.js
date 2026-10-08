@@ -130,7 +130,10 @@ export default function RootLayout() {
   // Desktop: one bar across the top (logo | tabs | location + reload), so the pages get the full width.
   const menu = desktop ? (
     <View style={styles.topNav}>
-      <Image source={logo} style={styles.topNavLogo} resizeMode="contain" />
+      <View style={styles.topNavBrand}>
+        <Image source={logo} style={styles.topNavLogo} resizeMode="contain" />
+        <Text style={styles.topNavTitle}>Playworld Hub</Text>
+      </View>
       <View style={styles.topNavTabs}>{tabs}</View>
       <View style={styles.topNavRight}>
         <LocationPicker />
@@ -244,7 +247,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  topNavBrand: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   topNavLogo: { width: 52, height: 52, borderRadius: 14 },
+  topNavTitle: { fontFamily: fonts.headingBold, fontSize: 20, color: colors.text },
   topNavTabs: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 4 },
   topNavRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   navItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999 },
