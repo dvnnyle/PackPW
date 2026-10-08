@@ -40,8 +40,13 @@ export async function sendPush(title: string, body: string): Promise<number> {
       body: JSON.stringify(batch.map((to) => ({ to, title, body, channelId: 'default', sound: 'default' }))),
     });
     if (!response.ok) throw new Error(`Expo push returned ${response.status}`);
-    const { data } = (await response.json()) as { data: { status: string; details?: { error?: string } }[] };
+    const { data } = (await response.json()) as {
+      data: { status: string; message?: string; details?: { error?: string } }[];
+    };
     data.forEach((ticket, j) => {
+      if (ticket.status === 'ok') return;
+      // Logged so problems (e.g. InvalidCredentials = FCM key missing in EAS) show up in the Render log.
+      console.error(`[push] Expo rejected a message: ${ticket.details?.error ?? ''} ${ticket.message ?? ''}`);
       if (ticket.details?.error === 'DeviceNotRegistered') tokens.delete(batch[j]);
     });
   }
@@ -61,6 +66,7 @@ router.post('/register', (req, res) => {
   if (!tokens.has(token)) {
     tokens.add(token);
     save();
+    console.log(`[push] New phone registered (${tokens.size} in total)`);
   }
   res.json({ ok: true });
 });
@@ -69,6 +75,7 @@ router.post('/register', (req, res) => {
 router.post('/test', async (_req, res) => {
   try {
     const phones = await sendPush('Playworld Hub', 'Testvarsel: varslene fungerer 🎉');
+    console.log(`[push] Test sent to ${phones} phone(s)`);
     res.json({ ok: true, phones });
   } catch (err) {
     console.error('[push] Test failed:', (err as Error).message);
