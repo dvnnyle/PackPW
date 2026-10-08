@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#000b36",
+        "backgroundColor": "#010b36",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "no.playworld.dashboard",
