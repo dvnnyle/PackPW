@@ -2,7 +2,7 @@
   "expo": {
     "name": "Playworld Hub",
     "slug": "pack",
-    "version": "1.0.27",
+    "version": "1.0.28",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

@@ -162,8 +162,9 @@ export default function RootLayout() {
         </TabList>
         <StatusBar style="dark" />
         <UpdateDialog update={update} onClose={() => setUpdate(null)} />
-        {/* Desktop: top nav bar / content.  Mobile: logo bar / content / bottom tab bar. */}
-        <View style={styles.frame}>
+        {/* Desktop: top nav bar / content.  Mobile: logo bar / content / bottom tab bar.
+            Side insets keep everything clear of the notch in landscape. */}
+        <View style={[styles.frame, { paddingLeft: insets.left, paddingRight: insets.right }]}>
           {desktop ? null : (
             <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
               {/* Picker on the left, logo centred over the full width. */}
