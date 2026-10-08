@@ -123,7 +123,7 @@ export default function RootLayout() {
 
   // Visible menu. Its triggers have no href: they switch to the tabs registered in the hidden TabList below.
   const menu = (
-    <View style={desktop ? styles.sidebar : [styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+    <View style={desktop ? styles.sidebar : [styles.bottomBar, { paddingBottom: insets.bottom + 6 }]}>
       {desktop ? <Image source={logo} style={styles.sidebarLogo} resizeMode="contain" /> : null}
       {desktop ? (
         <View style={styles.sidebarLocation}>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
-    paddingTop: 10,
+    paddingTop: 6,
   },
   bottomItem: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 4 },
   bottomLabel: { fontFamily: fonts.medium, fontSize: 11 },
