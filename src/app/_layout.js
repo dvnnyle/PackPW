@@ -21,6 +21,8 @@ import LocationPicker from '../components/LocationPicker';
 import { LocationProvider, useLocation } from '../location';
 import { RefreshProvider } from '../refresh';
 import RefreshButton from '../components/RefreshButton';
+import LoginScreen from '../components/LoginScreen';
+import { AuthProvider, needsLogin, useAuth } from '../auth';
 
 // Keep the splash screen up until the fonts are loaded.
 SplashScreen.preventAutoHideAsync();
@@ -56,16 +58,33 @@ function NavButton({ tab, desktop, isFocused, ...props }) {
 // are never mistaken for real ones.
 function LocationContent() {
   const { location } = useLocation();
+  const { demo } = useAuth();
   return (
     <>
-      {location.demo ? (
+      {demo || location.demo ? (
         <View style={styles.demoBar}>
-          <Text style={styles.demoText}>Demodata – Playworld {location.name} er ikke koblet til ennå</Text>
+          <Text style={styles.demoText}>
+            {demo ? 'Demoversjon – alle tall og navn er eksempeldata' : `Demodata – Playworld ${location.name} er ikke koblet til ennå`}
+          </Text>
         </View>
       ) : null}
       <TabSlot style={styles.slot} />
     </>
   );
+}
+
+// The app until the user has logged in (phone only; the website has the browser login).
+function AuthGate({ children }) {
+  const { token } = useAuth();
+  if (needsLogin && !token) {
+    return (
+      <>
+        <StatusBar style="dark" />
+        <LoginScreen />
+      </>
+    );
+  }
+  return children;
 }
 
 export default function RootLayout() {
@@ -120,6 +139,8 @@ export default function RootLayout() {
   );
 
   return (
+    <AuthProvider>
+    <AuthGate>
     <LocationProvider>
     <RefreshProvider>
       <Tabs style={styles.root}>
@@ -160,6 +181,8 @@ export default function RootLayout() {
       </Tabs>
     </RefreshProvider>
     </LocationProvider>
+    </AuthGate>
+    </AuthProvider>
   );
 }
 

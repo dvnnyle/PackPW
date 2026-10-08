@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { cached, wantsFresh } from '../cache/cache';
 import { config } from '../config';
 import { findNextBookingDay, getBookings, getUpcomingBookingDays } from '../services/funbutler';
-import { isValidDate } from '../utils/norway';
+import { isValidDate, locationOf } from '../utils/norway';
 import { isDemo, demoBookings, demoUpcoming } from '../services/demo';
 
 const router = Router();
@@ -16,7 +16,7 @@ router.get('/next', async (req, res) => {
     return;
   }
   if (isDemo(req, res)) {
-    res.json({ date: demoUpcoming(from, 1)[0]?.date ?? null, demo: true });
+    res.json({ date: demoUpcoming(from, 1, locationOf(req.query))[0]?.date ?? null, demo: true });
     return;
   }
 
@@ -40,7 +40,7 @@ router.get('/upcoming', async (req, res) => {
   }
   const count = Math.min(30, Math.max(1, Number(req.query.count) || 10));
   if (isDemo(req, res)) {
-    res.json({ days: demoUpcoming(from, count), demo: true });
+    res.json({ days: demoUpcoming(from, count, locationOf(req.query)), demo: true });
     return;
   }
 
@@ -66,7 +66,7 @@ router.get('/', async (req, res) => {
     return;
   }
   if (isDemo(req, res)) {
-    res.json({ date, bookings: demoBookings(date), demo: true });
+    res.json({ date, bookings: demoBookings(date, locationOf(req.query)), demo: true });
     return;
   }
 

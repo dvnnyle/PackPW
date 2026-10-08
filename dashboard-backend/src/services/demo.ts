@@ -7,10 +7,10 @@ import { locationOf, openingHours, todayInNorway } from '../utils/norway';
 
 export const DEMO_LOCATIONS = new Set(['triaden']);
 
-// Demo data for this request: a demo location, or any location when the caller used DEMO_API_KEY (the Google Play
-// build, which testers outside Playworld can install, so it must never reach real sales or customer data).
+// Demo data for this request: a demo location, or any location for a demo login or DEMO_API_KEY (the Google Play
+// app, which anyone can install, so those must never reach real sales or customer data).
 export function isDemo(req: Request, res: Response): boolean {
-  return res.locals.demoKey === true || DEMO_LOCATIONS.has(locationOf(req.query));
+  return res.locals.demo === true || DEMO_LOCATIONS.has(locationOf(req.query));
 }
 
 // Small seeded random generator so a date always produces the same demo values.
@@ -41,8 +41,8 @@ function hoursSoFar(date: string, open: number, close: number): number {
   return Math.min(close, Math.max(open, now + 1));
 }
 
-export function demoHourly(date: string): HourlySalesData {
-  const r = rng(`hourly:${date}`);
+export function demoHourly(date: string, loc = 'triaden'): HourlySalesData {
+  const r = rng(`${loc}:hourly:${date}`);
   const { open, close } = openingHours(date);
   const weekend = close === 19;
   const until = hoursSoFar(date, open, close);
@@ -69,13 +69,13 @@ export function demoHourly(date: string): HourlySalesData {
   return { date, updatedAt: new Date().toISOString(), openHour: open, closeHour: close, hours, topSellers, errors: [] };
 }
 
-export function demoDashboard(date: string): DashboardData {
-  const hourly = demoHourly(date);
-  const r = rng(`dashboard:${date}`);
+export function demoDashboard(date: string, loc = 'triaden'): DashboardData {
+  const hourly = demoHourly(date, loc);
+  const r = rng(`${loc}:dashboard:${date}`);
   const revenue = round(hourly.hours.reduce((s, h) => s + (h.extandaGo ?? 0), 0));
   const nordpay = hourly.hours.reduce((s, h) => s + (h.nordpay ?? 0), 0);
   const lastYear = round(revenue * (0.7 + r() * 0.6) || 8000 + r() * 6000);
-  const bookings = demoBookings(date);
+  const bookings = demoBookings(date, loc);
   return {
     date,
     updatedAt: hourly.updatedAt,
@@ -93,8 +93,8 @@ export function demoDashboard(date: string): DashboardData {
   };
 }
 
-export function demoBookings(date: string): Booking[] {
-  const r = rng(`bookings:${date}`);
+export function demoBookings(date: string, loc = 'triaden'): Booking[] {
+  const r = rng(`${loc}:bookings:${date}`);
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
   const count = weekday === 0 || weekday === 6 ? 2 + Math.floor(r() * 3) : r() < 0.4 ? 1 : 0;
   const times = ['11:00', '12:30', '14:00', '15:30', '17:00'];
@@ -128,20 +128,20 @@ export function demoBookings(date: string): Booking[] {
   });
 }
 
-export function demoUpcoming(from: string, count: number): { date: string; bookings: Booking[] }[] {
+export function demoUpcoming(from: string, count: number, loc = 'triaden'): { date: string; bookings: Booking[] }[] {
   const days = [];
   for (let i = 0; i < 90 && days.length < count; i++) {
     const d = new Date(`${from}T12:00:00Z`);
     d.setUTCDate(d.getUTCDate() + i);
     const date = d.toISOString().slice(0, 10);
-    const bookings = demoBookings(date);
+    const bookings = demoBookings(date, loc);
     if (bookings.length) days.push({ date, bookings });
   }
   return days;
 }
 
-export function demoStaff(date: string): StaffShift[] {
-  const r = rng(`staff:${date}`);
+export function demoStaff(date: string, loc = 'triaden'): StaffShift[] {
+  const r = rng(`${loc}:staff:${date}`);
   const { open, close } = openingHours(date);
   const today = todayInNorway();
   const shifts = GROUPS.map((group, i) => {

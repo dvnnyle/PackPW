@@ -3,7 +3,7 @@ import { cached, ttlForDate, wantsFresh } from '../cache/cache';
 import { getServiceAHourly, getServiceATopSellers } from '../services/serviceA';
 import { getServiceBHourly } from '../services/serviceB';
 import type { HourlySalesData } from '../types';
-import { isValidDate, openingHours, todayInNorway } from '../utils/norway';
+import { isValidDate, locationOf, openingHours, todayInNorway } from '../utils/norway';
 import { isDemo, demoHourly } from '../services/demo';
 
 const router = Router();
@@ -54,7 +54,7 @@ router.get('/hourly', async (req, res) => {
     return;
   }
   if (isDemo(req, res)) {
-    res.json({ ...demoHourly(date), demo: true });
+    res.json({ ...demoHourly(date, locationOf(req.query)), demo: true });
     return;
   }
   res.json(await cached(`sales-hourly:${date}`, ttlForDate(date), () => buildHourlySales(date), wantsFresh(req.query)));

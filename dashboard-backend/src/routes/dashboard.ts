@@ -4,7 +4,7 @@ import { getServiceAData } from '../services/serviceA';
 import { getServiceBData } from '../services/serviceB';
 import { getBookings } from '../services/funbutler';
 import type { DashboardData } from '../types';
-import { isValidDate, todayInNorway } from '../utils/norway';
+import { isValidDate, locationOf, todayInNorway } from '../utils/norway';
 import { isDemo, demoDashboard } from '../services/demo';
 
 const router = Router();
@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
     return;
   }
   if (isDemo(req, res)) {
-    res.json({ ...demoDashboard(date), demo: true });
+    res.json({ ...demoDashboard(date, locationOf(req.query)), demo: true });
     return;
   }
   res.json(await cached(`dashboard:${date}`, ttlForDate(date), () => buildDashboard(date), wantsFresh(req.query)));

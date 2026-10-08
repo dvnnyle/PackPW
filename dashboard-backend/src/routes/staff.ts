@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { cached, wantsFresh } from '../cache/cache';
 import { config } from '../config';
 import { getStaffWeek, weekOf } from '../services/planday';
-import { isValidDate, todayInNorway } from '../utils/norway';
+import { isValidDate, locationOf, todayInNorway } from '../utils/norway';
 import { isDemo, demoStaff } from '../services/demo';
 
 const router = Router();
@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
     return;
   }
   if (isDemo(req, res)) {
-    res.json({ date, shifts: demoStaff(date), demo: true });
+    res.json({ date, shifts: demoStaff(date, locationOf(req.query)), demo: true });
     return;
   }
   try {

@@ -19,9 +19,34 @@ function getApiUrl() {
 
 export const API_URL = getApiUrl();
 
-// The Render backend only answers requests carrying its API key. The key comes from the EAS environment
-// variable EXPO_PUBLIC_API_KEY at build time (never from the repo); locally it's unset and not needed.
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
+// The Render backend only answers logged-in requests: the app sends the token from the login screen (see auth.js);
+// the website is covered by the browser login. Locally the backend is open and no token is needed.
+let authToken = null;
+let onUnauthorized = null;
+export function setAuthToken(token) {
+  authToken = token;
+}
+export function setOnUnauthorized(handler) {
+  onUnauthorized = handler;
+}
+
+// Password → { token, demo }. Throws with a Norwegian message for the login screen.
+export async function login(password) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+  } catch {
+    throw new Error('Får ikke kontakt med serveren');
+  }
+  if (response.status === 401) throw new Error('Feil passord');
+  if (response.status === 429) throw new Error('For mange forsøk, prøv igjen om 15 minutter');
+  if (!response.ok) throw new Error(`Serveren svarte ${response.status}`);
+  return response.json();
+}
 
 // fresh = skip the backend's cache and fetch new data from the sites (the refresh button).
 // onCached = called right away with the last answer saved on this device (if any), before the network
@@ -42,8 +67,9 @@ async function getJson(rawPath, fresh = false, onCached, location = currentLocat
     if (saved !== undefined) onCached(saved);
   }
   const response = await fetch(`${API_URL}${path}${fresh ? `${path.includes('?') ? '&' : '?'}fresh=1` : ''}`, {
-    headers: API_KEY ? { 'x-api-key': API_KEY } : undefined,
+    headers: authToken ? { authorization: `Bearer ${authToken}` } : undefined,
   });
+  if (response.status === 401 && authToken) onUnauthorized?.();
   if (!response.ok) {
     throw new Error(`Backend returned ${response.status}`);
   }

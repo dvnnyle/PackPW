@@ -13,12 +13,15 @@ import weatherRouter from './routes/weather';
 import staffRouter from './routes/staff';
 import appVersionRouter from './routes/appVersion';
 import cronRouter from './routes/cron';
+import loginRouter, { verifyToken } from './auth';
 import { getStaffWeek } from './services/planday';
 import { getServiceAData } from './services/serviceA';
 import { getServiceBData } from './services/serviceB';
 import { todayInNorway } from './utils/norway';
 
 const app = express();
+// Render sits behind a proxy: use the visitor's real IP (the login's attempt limit counts per IP).
+app.set('trust proxy', 1);
 
 app.use(cors());
 app.use(express.json());
@@ -26,6 +29,7 @@ app.use(express.json());
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+app.use('/api/login', loginRouter);
 
 // Privacy policy for the Google Play listing: public, outside the website login.
 app.get('/personvern', (_req, res) => res.sendFile(path.resolve('public/personvern.html')));
@@ -47,15 +51,23 @@ function webLoginOk(req: express.Request): boolean {
 }
 
 // On the open internet (Render) the API returns sales figures and customer contact details, so it requires
-// the app's API key or the website login. Locally, with no API_KEY set, it stays open for development.
-const DEMO_KEY_ROUTES = /^\/(dashboard|sales|bookings|staff|weather|app-version)(\/|$)/;
+// the app login (Bearer token), the app's API key or the website login. Locally, with no API_KEY set, it stays
+// open for development. Demo logins and the demo key only get demo data, and only on the app's data routes.
+const DEMO_ROUTES = /^\/(dashboard|sales|bookings|staff|weather|app-version)(\/|$)/;
 const requireApiKey: RequestHandler = (req, res, next) => {
+  const [scheme, token] = (req.get('authorization') ?? '').split(' ');
+  const session = scheme === 'Bearer' && token ? verifyToken(token) : null;
+  if (session && !session.demo) return next();
+  if (session?.demo && DEMO_ROUTES.test(req.path)) {
+    res.locals.demo = true;
+    return next();
+  }
   if (!config.apiKey) return next();
   const key = req.get('x-api-key') ?? '';
   if (sameSecret(key, config.apiKey) || webLoginOk(req)) return next();
   // The Play build's key: demo data only, and only on the app's data routes (not /api/test or /api/cron).
-  if (config.demoApiKey && sameSecret(key, config.demoApiKey) && DEMO_KEY_ROUTES.test(req.path)) {
-    res.locals.demoKey = true;
+  if (config.demoApiKey && sameSecret(key, config.demoApiKey) && DEMO_ROUTES.test(req.path)) {
+    res.locals.demo = true;
     return next();
   }
   res.status(401).json({ error: 'Missing or invalid API key' });

@@ -54,3 +54,10 @@ export function writeCache(path, data) {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(save, 500);
 }
+
+// Forget every saved answer (on logout, so the next login never sees the previous one's data).
+export function clearCache() {
+  clearTimeout(saveTimer);
+  entries = {};
+  save();
+}

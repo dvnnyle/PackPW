@@ -8,6 +8,9 @@ export const config = {
   apiKey: process.env.API_KEY ?? '',
   // Key for the Google Play build: only ever gets demo data (see isDemo), so it is safe for outside testers.
   demoApiKey: process.env.DEMO_API_KEY ?? '',
+  // App login (see auth.ts): APP_PASSWORD = real data, DEMO_PASSWORD = demo data only. Empty = that login is off.
+  appPassword: process.env.APP_PASSWORD ?? '',
+  demoPassword: process.env.DEMO_PASSWORD ?? '',
   // Login for the website (browser login box / HTTP Basic Auth). The website is only served when WEB_PASSWORD is set.
   webUser: process.env.WEB_USER ?? 'playworld',
   webPassword: process.env.WEB_PASSWORD ?? '',

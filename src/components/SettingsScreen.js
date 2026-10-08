@@ -7,6 +7,7 @@ import { logos } from '../logos';
 import { canSelfUpdate, checkForUpdate, fromPlayStore, installedVersion, versionLabel } from '../updates';
 import PageHeader from './PageHeader';
 import UpdateDialog from './UpdateDialog';
+import { needsLogin, useAuth } from '../auth';
 
 // The services' own web pages (same URLs as in dashboard-backend/.env; logins stay in the backend).
 const SOURCES = [
@@ -66,6 +67,7 @@ export default function SettingsScreen() {
   const [checkResult, setCheckResult] = useState(null); // text under "Se etter oppdateringer"
   const [update, setUpdate] = useState(null);
   const [health, setHealth] = useState(null); // { ok, ms }
+  const { demo, logout } = useAuth();
 
   const pingServer = useCallback(async () => {
     setHealth(null);
@@ -142,6 +144,18 @@ export default function SettingsScreen() {
             last
           />
         </Group>
+
+        {needsLogin ? (
+          <Group title="Konto">
+            <Row
+              icon="log-out-outline"
+              label="Logg ut"
+              detail={demo ? 'Innlogget med demopassord · eksempeldata' : 'Innlogget · ekte tall'}
+              onPress={logout}
+              last
+            />
+          </Group>
+        ) : null}
 
         <Group title="Datakilder">
           {SOURCES.map((s, i) => (
