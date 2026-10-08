@@ -206,6 +206,7 @@ export default function SettingsScreen() {
 
         <Group title="Om">
           <Row icon="business-outline" label="Playworld Sørlandet" detail="Barstølveien 35, 4636 Kristiansand" />
+          <Row icon="business-outline" label="Playworld Triaden" detail="Triaden Lørenskog Storsenter, Gamleveien 88, 1461 Rasta" />
           <Row icon="refresh-outline" label="Oppdatering av tall" detail="Automatisk hvert minutt, eller med oppdater-knappen" last />
         </Group>
 

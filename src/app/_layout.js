@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { usePathname } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -79,9 +80,11 @@ function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
 function LocationContent() {
   const { location } = useLocation();
   const { demo } = useAuth();
+  // The weather is always real (MET Norway), so Været gets no demo strip.
+  const realPage = usePathname() === '/vaer';
   return (
     <>
-      {demo || location.demo ? (
+      {(demo || location.demo) && !realPage ? (
         <View style={styles.demoBar}>
           <Text style={styles.demoText}>
             {demo ? 'Demoversjon – alle tall og navn er eksempeldata' : `Demodata – Playworld ${location.name} er ikke koblet til ennå`}
