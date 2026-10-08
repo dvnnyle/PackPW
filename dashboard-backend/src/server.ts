@@ -13,6 +13,7 @@ import appVersionRouter from './routes/appVersion';
 import cronRouter from './routes/cron';
 import loginRouter, { sameSecret, verifyToken } from './auth';
 import pushRouter from './push';
+import { startNotificationSchedule } from './notifications';
 import { getStaffWeek } from './services/planday';
 import { getServiceAData } from './services/serviceA';
 import { getServiceBData } from './services/serviceB';
@@ -80,6 +81,7 @@ app.use(errorHandler);
 
 const server = app.listen(config.port, () => {
   console.log(`Backend running at http://localhost:${config.port}`);
+  startNotificationSchedule();
   // Log in to every service in the background so the first app request doesn't wait for a browser login.
   const today = todayInNorway();
   const warmUps: [string, Promise<unknown>][] = [
