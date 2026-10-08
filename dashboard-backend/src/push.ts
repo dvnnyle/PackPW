@@ -8,6 +8,7 @@ import { Router } from 'express';
 // deploys; without one the list starts empty after a deploy and fills up again as phones open the app.
 const TOKENS_FILE = path.resolve(process.env.PUSH_TOKENS_FILE ?? 'data/push-tokens.json');
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const EXPO_RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
 const TOKEN_PATTERN = /^Expo(nent)?PushToken\[[\w-]+\]$/;
 
 function load(): Set<string> {
@@ -41,8 +42,10 @@ export async function sendPush(title: string, body: string): Promise<number> {
     });
     if (!response.ok) throw new Error(`Expo push returned ${response.status}`);
     const { data } = (await response.json()) as {
-      data: { status: string; message?: string; details?: { error?: string } }[];
+      data: { status: string; id?: string; message?: string; details?: { error?: string } }[];
     };
+    const ids = data.map((ticket) => ticket.id).filter((id): id is string => !!id);
+    if (ids.length) setTimeout(() => logReceipts(ids).catch(() => {}), 15_000);
     data.forEach((ticket, j) => {
       if (ticket.status === 'ok') return;
       // Logged so problems (e.g. InvalidCredentials = FCM key missing in EAS) show up in the Render log.
@@ -52,6 +55,22 @@ export async function sendPush(title: string, body: string): Promise<number> {
   }
   save();
   return tokens.size;
+}
+
+// A ticket only means Expo accepted the message; the receipt says whether Google (FCM) delivered it.
+async function logReceipts(ids: string[]) {
+  const response = await fetch(EXPO_RECEIPTS_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  const { data } = (await response.json()) as {
+    data: Record<string, { status: string; message?: string; details?: { error?: string } }>;
+  };
+  for (const receipt of Object.values(data ?? {})) {
+    if (receipt.status === 'ok') console.log('[push] Delivered to Google (FCM)');
+    else console.error(`[push] Delivery failed: ${receipt.details?.error ?? ''} ${receipt.message ?? ''}`);
+  }
 }
 
 const router = Router();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { fetchHealth, sendTestPush } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
@@ -168,8 +168,7 @@ export default function SettingsScreen() {
           />
         </Group>
 
-        {Platform.OS !== 'web' ? (
-          <Group title="Varsler">
+        <Group title="Varsler">
             <Row
               icon="notifications-outline"
               label="Send testvarsel"
@@ -178,8 +177,7 @@ export default function SettingsScreen() {
               busy={pushState === 'sending'}
               last
             />
-          </Group>
-        ) : null}
+        </Group>
 
         <Group title="Datakilder">
           {SOURCES.map((s, i) => (
