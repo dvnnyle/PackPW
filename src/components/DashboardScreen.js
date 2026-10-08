@@ -24,8 +24,6 @@ import { useRefresh } from '../refresh';
 import { SkeletonCard, SkeletonRows } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
-// Page width from which Oversikt uses two columns (desktop browser).
-const WIDE_MIN = 1000;
 
 function formatTime(iso) {
   const d = new Date(iso);
@@ -266,7 +264,7 @@ function BookingsSection({ refreshKey, locationId }) {
 }
 
 // Oversikt for one location (a page in the pager below).
-function OversiktPage({ locationId, wide }) {
+function OversiktPage({ locationId }) {
   const today = toDateString(new Date());
   // The date filter only drives the two sales sections; FunButler has its own day bar.
   const [date, setDate] = useState(today);
@@ -333,7 +331,7 @@ function OversiktPage({ locationId, wide }) {
   return (
     <View style={styles.safe}>
       <ScrollView
-        contentContainerStyle={[styles.content, wide && styles.contentWide]}
+        contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <PageHeader
@@ -347,80 +345,74 @@ function OversiktPage({ locationId, wide }) {
 
 
 
-        {/* Wide screens (desktop): sales on the left, bookings/weather/staff on the right. */}
-        <View style={wide ? styles.columns : styles.stack}>
-          <View style={[styles.stack, wide && styles.column]}>
-            {error && !current ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorTitle}>Får ikke kontakt med serveren</Text>
-                <Text style={styles.muted}>{error}</Text>
-              </View>
-            ) : !current ? (
-              // Same shapes as the total card and the two sales sections, so the page doesn't jump when data arrives.
-              <>
-                <SkeletonCard accent height={190} />
-                <SkeletonCard tiles={[150, 110, 110]} />
-                <SkeletonCard tiles={[110]} />
-              </>
-            ) : (
-              <>
-                {totalSales != null ? (
-                  <TotalCard
-                    title={isToday ? 'Totalt salg i dag' : 'Totalt salg'}
-                    total={totalSales}
-                    parts={[
-                      { label: 'Extanda Go', value: sales?.revenueToday },
-                      { label: 'NordPay', value: nordpay?.salesToday },
-                    ]}
-                  />
-                ) : null}
-
-                <Section logo={logos.extandaGo} title="Extanda Go">
-                  {sales ? (
-                    <>
-                      <StatCard title={isToday ? 'Dagens omsetning' : 'Omsetning'} value={formatNumber(sales.revenueToday, 2)} unit="kr">
-                        <Text style={styles.detail}>
-                          Samme ukedag i fjor: {formatNumber(sales.revenueLastYearSameWeekday, 2)} kr
-                        </Text>
-                        {change != null ? (
-                          <Text style={[styles.detail, change < 0 ? styles.negative : styles.positive]}>
-                            {change > 0 ? '+' : ''}
-                            {formatNumber(change, 1)} % mot i fjor
-                          </Text>
-                        ) : null}
-                      </StatCard>
-                      <View style={styles.row}>
-                        <StatCard style={styles.half} title="Produkter solgt" value={formatNumber(sales.productsSoldToday)} />
-                        <StatCard style={styles.half} title="Kunder" value={formatNumber(sales.customersToday)} />
-                      </View>
-                      <StatCard title="Bruttomargin" value={formatNumber(sales.grossMarginPercent)} unit="%" />
-                    </>
-                  ) : (
-                    <SectionError text="Kunne ikke hente tall fra Extanda Go" />
-                  )}
-                </Section>
-
-                <Section logo={logos.nordpay} title="NordPay">
-                  {nordpay ? (
-                    <View style={styles.row}>
-                      <StatCard style={styles.half} title={isToday ? 'Dagens salg' : 'Salg'} value={formatNumber(nordpay.salesToday)} unit="kr" />
-                      <StatCard style={styles.half} title="Bestillinger" value={formatNumber(nordpay.ordersToday)} />
-                    </View>
-                  ) : (
-                    <SectionError text="Kunne ikke hente tall fra NordPay" />
-                  )}
-                </Section>
-              </>
-            )}
+        {error && !current ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>Får ikke kontakt med serveren</Text>
+            <Text style={styles.muted}>{error}</Text>
           </View>
-          <View style={[styles.stack, wide && styles.column]}>
-            <BookingsSection refreshKey={refreshKey} locationId={locationId} />
+        ) : !current ? (
+          // Same shapes as the total card and the two sales sections, so the page doesn't jump when data arrives.
+          <>
+            <SkeletonCard accent height={190} />
+            <SkeletonCard tiles={[150, 110, 110]} />
+            <SkeletonCard tiles={[110]} />
+          </>
+        ) : (
+          <>
+            {totalSales != null ? (
+              <TotalCard
+                title={isToday ? 'Totalt salg i dag' : 'Totalt salg'}
+                total={totalSales}
+                parts={[
+                  { label: 'Extanda Go', value: sales?.revenueToday },
+                  { label: 'NordPay', value: nordpay?.salesToday },
+                ]}
+              />
+            ) : null}
 
-            <WeatherWidget refreshKey={refreshKey} locationId={locationId} />
+            <Section logo={logos.extandaGo} title="Extanda Go">
+              {sales ? (
+                <>
+                  <StatCard title={isToday ? 'Dagens omsetning' : 'Omsetning'} value={formatNumber(sales.revenueToday, 2)} unit="kr">
+                    <Text style={styles.detail}>
+                      Samme ukedag i fjor: {formatNumber(sales.revenueLastYearSameWeekday, 2)} kr
+                    </Text>
+                    {change != null ? (
+                      <Text style={[styles.detail, change < 0 ? styles.negative : styles.positive]}>
+                        {change > 0 ? '+' : ''}
+                        {formatNumber(change, 1)} % mot i fjor
+                      </Text>
+                    ) : null}
+                  </StatCard>
+                  <View style={styles.row}>
+                    <StatCard style={styles.half} title="Produkter solgt" value={formatNumber(sales.productsSoldToday)} />
+                    <StatCard style={styles.half} title="Kunder" value={formatNumber(sales.customersToday)} />
+                  </View>
+                  <StatCard title="Bruttomargin" value={formatNumber(sales.grossMarginPercent)} unit="%" />
+                </>
+              ) : (
+                <SectionError text="Kunne ikke hente tall fra Extanda Go" />
+              )}
+            </Section>
 
-            <StaffSection refreshKey={refreshKey} locationId={locationId} />
-          </View>
-        </View>
+            <Section logo={logos.nordpay} title="NordPay">
+              {nordpay ? (
+                <View style={styles.row}>
+                  <StatCard style={styles.half} title={isToday ? 'Dagens salg' : 'Salg'} value={formatNumber(nordpay.salesToday)} unit="kr" />
+                  <StatCard style={styles.half} title="Bestillinger" value={formatNumber(nordpay.ordersToday)} />
+                </View>
+              ) : (
+                <SectionError text="Kunne ikke hente tall fra NordPay" />
+              )}
+            </Section>
+          </>
+        )}
+
+        <BookingsSection refreshKey={refreshKey} locationId={locationId} />
+
+        <WeatherWidget refreshKey={refreshKey} locationId={locationId} />
+
+        <StaffSection refreshKey={refreshKey} locationId={locationId} />
       </ScrollView>
     </View>
   );
@@ -466,7 +458,7 @@ export default function DashboardScreen() {
         >
           {locations.map((l) => (
             <View key={l.id} style={{ width: size.width, height: size.height }}>
-              <OversiktPage locationId={l.id} wide={size.width >= WIDE_MIN} />
+              <OversiktPage locationId={l.id} />
             </View>
           ))}
         </ScrollView>
@@ -479,10 +471,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, minHeight: 0, backgroundColor: '#f2f4f7' },
   // maxWidth keeps the dashboard readable on wide desktop screens
   content: { padding: 16, paddingBottom: 48, gap: 12, width: '100%', maxWidth: 760, alignSelf: 'center' },
-  contentWide: { maxWidth: 1320, paddingHorizontal: 24 },
-  stack: { gap: 12 },
-  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-  column: { flex: 1, minWidth: 0 },
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
   totalCard: {
