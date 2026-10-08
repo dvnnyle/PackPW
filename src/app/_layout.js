@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Haptics from 'expo-haptics';
 import {
   useFonts,
   Poppins_300Light,
@@ -42,12 +43,20 @@ const BOTTOM_TABS = ['bookinger', 'statistikk', 'index', 'vaer', 'innstillinger'
 
 // One menu item; rendered as a sidebar row on desktop and a bottom-bar button on mobile.
 // On the phone, Oversikt (the middle tab) sits in a raised blue circle.
-function NavButton({ tab, desktop, isFocused, ...props }) {
+function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
   const color = isFocused ? colors.accent : colors.muted;
   const featured = !desktop && tab.name === 'index';
+  // A short vibration on the phone: a tick for the tabs, a firmer tap for the rocket.
+  const press = (e) => {
+    if (Platform.OS !== 'web') {
+      (featured ? Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium) : Haptics.selectionAsync()).catch(() => {});
+    }
+    onPress?.(e);
+  };
   return (
     <Pressable
       {...props}
+      onPress={press}
       style={[
         desktop ? styles.sideItem : styles.bottomItem,
         desktop && isFocused && styles.sideItemActive,
