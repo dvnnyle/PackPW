@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { Platform } from 'react-native';
 import { clearCache } from './apiCache';
 import { login as apiLogin, setAuthToken, setOnUnauthorized } from './api';
+import { registerForPush } from './push';
 
 // The login (one shared password; the backend decides whether it gives real or demo data), the same on the phone
 // and the website. The token is kept in the phone's secure storage, or the browser's localStorage on the web.
@@ -55,6 +56,11 @@ export function AuthProvider({ children }) {
 
   // The server rejected the token (expired, or the password was changed): back to the login screen.
   useEffect(() => setOnUnauthorized(logout), [logout]);
+
+  // Logged in with the staff password: register this phone for notifications (demo logins get none).
+  useEffect(() => {
+    if (session.token && !session.demo) registerForPush();
+  }, [session.token, session.demo]);
 
   const value = useMemo(() => ({ ...session, login, logout }), [session, login, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

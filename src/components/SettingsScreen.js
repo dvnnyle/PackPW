@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { fetchHealth } from '../api';
+import { fetchHealth, sendTestPush } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
 import { logos } from '../logos';
 import { canSelfUpdate, checkForUpdate, fromPlayStore, installedVersion, versionLabel } from '../updates';
@@ -79,6 +79,17 @@ export default function SettingsScreen() {
   const [update, setUpdate] = useState(null);
   const [health, setHealth] = useState(null); // { ok, ms }
   const { demo, logout } = useAuth();
+  const [pushState, setPushState] = useState(null); // null | 'sending' | text after sending
+
+  const testPush = async () => {
+    setPushState('sending');
+    try {
+      const { phones } = await sendTestPush();
+      setPushState(`Sendt til ${phones} ${phones === 1 ? 'telefon' : 'telefoner'}`);
+    } catch {
+      setPushState('Kunne ikke sende testvarsel');
+    }
+  };
 
   // `health` starts as null (checking); pressing the Status row checks again.
   useEffect(() => {
@@ -156,6 +167,19 @@ export default function SettingsScreen() {
             last
           />
         </Group>
+
+        {Platform.OS !== 'web' && !demo ? (
+          <Group title="Varsler">
+            <Row
+              icon="notifications-outline"
+              label="Send testvarsel"
+              detail={pushState && pushState !== 'sending' ? pushState : 'Sender et varsel til alle telefoner med appen'}
+              onPress={testPush}
+              busy={pushState === 'sending'}
+              last
+            />
+          </Group>
+        ) : null}
 
         <Group title="Konto">
           <Row

@@ -12,6 +12,7 @@ import staffRouter from './routes/staff';
 import appVersionRouter from './routes/appVersion';
 import cronRouter from './routes/cron';
 import loginRouter, { sameSecret, verifyToken } from './auth';
+import pushRouter from './push';
 import { getStaffWeek } from './services/planday';
 import { getServiceAData } from './services/serviceA';
 import { getServiceBData } from './services/serviceB';
@@ -55,6 +56,7 @@ app.use('/api/weather', weatherRouter);
 app.use('/api/staff', staffRouter);
 app.use('/api/app-version', appVersionRouter);
 app.use('/api/cron', cronRouter);
+app.use('/api/push', pushRouter);
 
 // The website (Expo web export in ./web, built on Render). The files themselves hold no data; like the phone app
 // it shows the login screen, and every API call needs the login token.

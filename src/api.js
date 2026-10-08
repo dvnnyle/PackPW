@@ -117,6 +117,26 @@ export function fetchAppVersion() {
   return getJson('/api/app-version');
 }
 
+async function postJson(path, body) {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(authToken ? { authorization: `Bearer ${authToken}` } : {}) },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+  return response.json();
+}
+
+// This phone's Expo push token, so the backend can send it notifications.
+export function registerPushToken(token) {
+  return postJson('/api/push/register', { token });
+}
+
+// Sends a test notification to every registered phone → { ok, phones }
+export function sendTestPush() {
+  return postJson('/api/push/test', {});
+}
+
 // Backend health check → { status: "ok" }
 export function fetchHealth() {
   return getJson('/api/health');
