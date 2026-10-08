@@ -24,7 +24,7 @@ import { useRefresh } from '../refresh';
 import { SkeletonCard, SkeletonRows } from './Skeleton';
 
 const REFRESH_INTERVAL_MS = 60_000;
-// Page width from which Oversikt uses the one-screen desktop layout (three columns).
+// Page width from which Oversikt uses two columns (desktop browser).
 const WIDE_MIN = 1000;
 
 function formatTime(iso) {
@@ -330,123 +330,97 @@ function OversiktPage({ locationId, wide }) {
       ? (sales?.revenueToday ?? 0) + (nordpay?.salesToday ?? 0)
       : null;
 
-  const header = (
-    <PageHeader
-      title={isToday ? 'I dag' : 'Oversikt'}
-      subtitle={current?.updatedAt ? `Oppdatert ${formatTime(current.updatedAt)} · hvert minutt` : null}
-      live={isToday}
-      icon="time-outline"
-      compact={wide}
-    >
-      <DateFilter date={date} onChange={setDate} max={today} />
-    </PageHeader>
-  );
-
-  const salesSections =
-    error && !current ? (
-      <View style={styles.errorBox}>
-        <Text style={styles.errorTitle}>Får ikke kontakt med serveren</Text>
-        <Text style={styles.muted}>{error}</Text>
-      </View>
-    ) : !current ? (
-      // Same shapes as the total card and the two sales sections, so the page doesn't jump when data arrives.
-      <>
-        <SkeletonCard accent height={190} />
-        <SkeletonCard tiles={[150, 110, 110]} />
-        <SkeletonCard tiles={[110]} />
-      </>
-    ) : (
-      <>
-        {totalSales != null ? (
-          <TotalCard
-            title={isToday ? 'Totalt salg i dag' : 'Totalt salg'}
-            total={totalSales}
-            parts={[
-              { label: 'Extanda Go', value: sales?.revenueToday },
-              { label: 'NordPay', value: nordpay?.salesToday },
-            ]}
-          />
-        ) : null}
-
-        <Section logo={logos.extandaGo} title="Extanda Go">
-          {sales ? (
-            <>
-              <StatCard title={isToday ? 'Dagens omsetning' : 'Omsetning'} value={formatNumber(sales.revenueToday, 2)} unit="kr">
-                <Text style={styles.detail}>
-                  Samme ukedag i fjor: {formatNumber(sales.revenueLastYearSameWeekday, 2)} kr
-                </Text>
-                {change != null ? (
-                  <Text style={[styles.detail, change < 0 ? styles.negative : styles.positive]}>
-                    {change > 0 ? '+' : ''}
-                    {formatNumber(change, 1)} % mot i fjor
-                  </Text>
-                ) : null}
-              </StatCard>
-              {/* Desktop: the three small tiles side by side, so Oversikt fits on one screen. */}
-              <View style={styles.row}>
-                <StatCard style={styles.half} title="Produkter solgt" value={formatNumber(sales.productsSoldToday)} />
-                <StatCard style={styles.half} title="Kunder" value={formatNumber(sales.customersToday)} />
-                {wide ? (
-                  <StatCard style={styles.half} title="Bruttomargin" value={formatNumber(sales.grossMarginPercent)} unit="%" />
-                ) : null}
-              </View>
-              {wide ? null : <StatCard title="Bruttomargin" value={formatNumber(sales.grossMarginPercent)} unit="%" />}
-            </>
-          ) : (
-            <SectionError text="Kunne ikke hente tall fra Extanda Go" />
-          )}
-        </Section>
-
-        <Section logo={logos.nordpay} title="NordPay">
-          {nordpay ? (
-            <View style={styles.row}>
-              <StatCard style={styles.half} title={isToday ? 'Dagens salg' : 'Salg'} value={formatNumber(nordpay.salesToday)} unit="kr" />
-              <StatCard style={styles.half} title="Bestillinger" value={formatNumber(nordpay.ordersToday)} />
-            </View>
-          ) : (
-            <SectionError text="Kunne ikke hente tall fra NordPay" />
-          )}
-        </Section>
-      </>
-    );
-
-  const bookings = <BookingsSection refreshKey={refreshKey} locationId={locationId} />;
-  const weather = <WeatherWidget refreshKey={refreshKey} locationId={locationId} />;
-  const staff = <StaffSection refreshKey={refreshKey} locationId={locationId} />;
-
-  // Desktop: everything on one screen (100% height). A compact header row, then three columns that each scroll
-  // on their own if their content is taller than the window: sales | bookings + weather | staff.
-  if (wide) {
-    return (
-      <View style={[styles.safe, styles.fitScreen]}>
-        {header}
-        <View style={styles.columns}>
-          <ScrollView style={styles.column} contentContainerStyle={styles.stack}>
-            {salesSections}
-          </ScrollView>
-          <ScrollView style={styles.column} contentContainerStyle={styles.stack}>
-            {bookings}
-            {weather}
-          </ScrollView>
-          <ScrollView style={styles.column} contentContainerStyle={styles.stack}>
-            {staff}
-          </ScrollView>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.safe}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, wide && styles.contentWide]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {header}
-        {salesSections}
-        {bookings}
-        {weather}
-        {staff}
+        <PageHeader
+          title={isToday ? 'I dag' : 'Oversikt'}
+          subtitle={current?.updatedAt ? `Oppdatert ${formatTime(current.updatedAt)} · hvert minutt` : null}
+          live={isToday}
+          icon="time-outline"
+        >
+          <DateFilter date={date} onChange={setDate} max={today} />
+        </PageHeader>
+
+
+
+        {/* Wide screens (desktop): sales on the left, bookings/weather/staff on the right. */}
+        <View style={wide ? styles.columns : styles.stack}>
+          <View style={[styles.stack, wide && styles.column]}>
+            {error && !current ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorTitle}>Får ikke kontakt med serveren</Text>
+                <Text style={styles.muted}>{error}</Text>
+              </View>
+            ) : !current ? (
+              // Same shapes as the total card and the two sales sections, so the page doesn't jump when data arrives.
+              <>
+                <SkeletonCard accent height={190} />
+                <SkeletonCard tiles={[150, 110, 110]} />
+                <SkeletonCard tiles={[110]} />
+              </>
+            ) : (
+              <>
+                {totalSales != null ? (
+                  <TotalCard
+                    title={isToday ? 'Totalt salg i dag' : 'Totalt salg'}
+                    total={totalSales}
+                    parts={[
+                      { label: 'Extanda Go', value: sales?.revenueToday },
+                      { label: 'NordPay', value: nordpay?.salesToday },
+                    ]}
+                  />
+                ) : null}
+
+                <Section logo={logos.extandaGo} title="Extanda Go">
+                  {sales ? (
+                    <>
+                      <StatCard title={isToday ? 'Dagens omsetning' : 'Omsetning'} value={formatNumber(sales.revenueToday, 2)} unit="kr">
+                        <Text style={styles.detail}>
+                          Samme ukedag i fjor: {formatNumber(sales.revenueLastYearSameWeekday, 2)} kr
+                        </Text>
+                        {change != null ? (
+                          <Text style={[styles.detail, change < 0 ? styles.negative : styles.positive]}>
+                            {change > 0 ? '+' : ''}
+                            {formatNumber(change, 1)} % mot i fjor
+                          </Text>
+                        ) : null}
+                      </StatCard>
+                      <View style={styles.row}>
+                        <StatCard style={styles.half} title="Produkter solgt" value={formatNumber(sales.productsSoldToday)} />
+                        <StatCard style={styles.half} title="Kunder" value={formatNumber(sales.customersToday)} />
+                      </View>
+                      <StatCard title="Bruttomargin" value={formatNumber(sales.grossMarginPercent)} unit="%" />
+                    </>
+                  ) : (
+                    <SectionError text="Kunne ikke hente tall fra Extanda Go" />
+                  )}
+                </Section>
+
+                <Section logo={logos.nordpay} title="NordPay">
+                  {nordpay ? (
+                    <View style={styles.row}>
+                      <StatCard style={styles.half} title={isToday ? 'Dagens salg' : 'Salg'} value={formatNumber(nordpay.salesToday)} unit="kr" />
+                      <StatCard style={styles.half} title="Bestillinger" value={formatNumber(nordpay.ordersToday)} />
+                    </View>
+                  ) : (
+                    <SectionError text="Kunne ikke hente tall fra NordPay" />
+                  )}
+                </Section>
+              </>
+            )}
+          </View>
+          <View style={[styles.stack, wide && styles.column]}>
+            <BookingsSection refreshKey={refreshKey} locationId={locationId} />
+
+            <WeatherWidget refreshKey={refreshKey} locationId={locationId} />
+
+            <StaffSection refreshKey={refreshKey} locationId={locationId} />
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -505,10 +479,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, minHeight: 0, backgroundColor: '#f2f4f7' },
   // maxWidth keeps the dashboard readable on wide desktop screens
   content: { padding: 16, paddingBottom: 48, gap: 12, width: '100%', maxWidth: 760, alignSelf: 'center' },
-  // Desktop: fills the window below the top bar; the columns scroll inside it.
-  fitScreen: { width: '100%', maxWidth: 1600, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 16, gap: 12 },
-  stack: { gap: 12, paddingBottom: 16 },
-  columns: { flex: 1, minHeight: 0, flexDirection: 'row', gap: 16 },
+  contentWide: { maxWidth: 1320, paddingHorizontal: 24 },
+  stack: { gap: 12 },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   column: { flex: 1, minWidth: 0 },
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
