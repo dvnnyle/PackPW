@@ -15,8 +15,8 @@ services:
       cd dashboard-backend && npm ci && npx playwright install --only-shell chromium
     startCommand: cd dashboard-backend && npm start
     region: frankfurt
-    # Free plan: 512 MB, 0.1 CPU, sleeps after 15 minutes without requests. Starter (paid) gives 5x the CPU.
-    plan: free
+    # Starter plan ($7/month): 0.5 CPU, 512 MB, never sleeps (the free plan had 0.1 CPU and slept after 15 minutes).
+    plan: starter
     healthCheckPath: /api/health
     # Redeploy only when the backend or the web app changes. Publishing a new app version (app-version.json,
     # read live from GitHub) and the helper scripts don't restart the service.
