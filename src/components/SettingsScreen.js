@@ -131,11 +131,10 @@ export default function SettingsScreen() {
         </Group>
 
         <Group title="Tilkobling">
-          {/* Where the server runs, without its address (no need to show the URL in the app). */}
+          {/* Connection state only; the server address is not shown in the app. */}
           <Row
             icon="server-outline"
             label="Server"
-            detail="Playworld-serveren · Render, Frankfurt (EU)"
             value={!health ? null : health.ok ? 'Tilkoblet' : 'Frakoblet'}
             valueColor={health?.ok ? '#16a34a' : '#dc2626'}
           />
