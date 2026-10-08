@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, St
 import { cardShadow, colors, fonts } from '../theme';
 import { useAuth } from '../auth';
 
-const logo = require('../../assets/branding/logo.png');
+const logo = require('../../assets/branding/hub_logo.png');
 
 // Shown on the phone until the user has logged in with the app password.
 export default function LoginScreen() {
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...cardShadow,
   },
-  logo: { width: 140, height: 115 },
+  logo: { width: 120, height: 120, borderRadius: 28 },
   title: { fontFamily: fonts.headingBold, fontSize: 26, color: colors.text },
   muted: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, textAlign: 'center' },
   input: {
