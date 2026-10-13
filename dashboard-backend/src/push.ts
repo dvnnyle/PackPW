@@ -13,7 +13,18 @@ const EXPO_RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
 const TOKEN_PATTERN = /^Expo(nent)?PushToken\[[\w-]+\]$/;
 
 // The kinds of notification (see notifications.ts). New phones get all of them.
-export const KINDS = ['bookings', 'hourly', 'closing', 'punchIn'] as const;
+export const KINDS = [
+  'bookings',
+  'hourly',
+  'closing',
+  'weekly',
+  'newBooking',
+  'bookingSoon',
+  'punchIn',
+  'punchOut',
+  'missingPunch',
+  'weather',
+] as const;
 export type Kind = (typeof KINDS)[number];
 type Prefs = Record<Kind, boolean>;
 const allOn = (): Prefs => Object.fromEntries(KINDS.map((k) => [k, true])) as Prefs;

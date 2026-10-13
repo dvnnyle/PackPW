@@ -31,10 +31,16 @@ export function Group({ title, children }) {
 // One settings row: icon or logo, label, optional detail under it, and a value or chevron on the right.
 // The notifications a phone can switch on or off (stored per phone on the server).
 export const NOTIFICATION_KINDS = [
-  { key: 'bookings', icon: 'calendar-outline', label: 'Bookinger i dag', detail: 'Ved åpning: antall bookinger og gjester' },
-  { key: 'hourly', icon: 'trending-up-outline', label: 'Salg hver time', detail: 'Totalt salg så langt i dag, hver hele time' },
-  { key: 'closing', icon: 'moon-outline', label: 'Dagens salg ved stenging', detail: 'Sluttsummen 10 minutter etter stenging' },
-  { key: 'punchIn', icon: 'person-add-outline', label: 'Ansatt stempler inn', detail: 'Når noen stempler inn i Planday' },
+  { group: 'Salg', key: 'hourly', icon: 'trending-up-outline', label: 'Salg hver time', detail: 'Totalt salg så langt i dag, hver hele time' },
+  { group: 'Salg', key: 'closing', icon: 'moon-outline', label: 'Dagens salg ved stenging', detail: 'Sluttsummen 10 minutter etter stenging' },
+  { group: 'Salg', key: 'weekly', icon: 'bar-chart-outline', label: 'Ukesoppsummering', detail: 'Mandag kl 09: forrige uke mot uka før' },
+  { group: 'Bookinger', key: 'bookings', icon: 'calendar-outline', label: 'Bookinger i dag', detail: 'Ved åpning: antall bookinger og gjester' },
+  { group: 'Bookinger', key: 'newBooking', icon: 'balloon-outline', label: 'Ny booking', detail: 'Når noen booker i FunButler (neste 30 dager)' },
+  { group: 'Bookinger', key: 'bookingSoon', icon: 'alarm-outline', label: 'Booking om 30 min', detail: 'Påminnelse før hver booking starter' },
+  { group: 'Ansatte', key: 'punchIn', icon: 'person-add-outline', label: 'Ansatt stempler inn', detail: 'Når noen stempler inn i Planday' },
+  { group: 'Ansatte', key: 'punchOut', icon: 'exit-outline', label: 'Ansatt stempler ut', detail: 'Når noen stempler ut i Planday' },
+  { group: 'Ansatte', key: 'missingPunch', icon: 'alert-circle-outline', label: 'Ikke stemplet inn', detail: 'Vakten startet for 10 min siden, men ingen har stemplet inn' },
+  { group: 'Vær', key: 'weather', icon: 'rainy-outline', label: 'Regn i morgen', detail: 'Kl 18 hvis det er meldt regn i åpningstiden i morgen' },
 ];
 
 // A settings row with an on/off switch.

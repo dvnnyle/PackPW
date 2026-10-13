@@ -59,19 +59,25 @@ export default function VarslerScreen() {
             />
           </Group>
         ) : push ? (
-          <Group title="Personlige varsler">
-            {NOTIFICATION_KINDS.map((k, i) => (
-              <ToggleRow
-                key={k.key}
-                icon={k.icon}
-                label={k.label}
-                detail={k.detail}
-                value={push.prefs[k.key] !== false}
-                onChange={(v) => toggle(k.key, v)}
-                last={i === NOTIFICATION_KINDS.length - 1}
-              />
-            ))}
-          </Group>
+          // One group per topic (Salg, Bookinger, Ansatte, Vær), in the order of NOTIFICATION_KINDS.
+          [...new Set(NOTIFICATION_KINDS.map((k) => k.group))].map((group) => {
+            const kinds = NOTIFICATION_KINDS.filter((k) => k.group === group);
+            return (
+              <Group key={group} title={group}>
+                {kinds.map((k, i) => (
+                  <ToggleRow
+                    key={k.key}
+                    icon={k.icon}
+                    label={k.label}
+                    detail={k.detail}
+                    value={push.prefs[k.key] !== false}
+                    onChange={(v) => toggle(k.key, v)}
+                    last={i === kinds.length - 1}
+                  />
+                ))}
+              </Group>
+            );
+          })
         ) : null}
 
         <Group title="Test">
