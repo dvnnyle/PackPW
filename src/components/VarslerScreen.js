@@ -6,7 +6,7 @@ import { fetchPushPrefs, savePushPrefs, sendTestPush } from '../api';
 import { getPushToken } from '../push';
 import { colors, fonts } from '../theme';
 import PageHeader from './PageHeader';
-import { showExampleToast } from './WebToasts';
+import { getWebSound, setWebSound, showExampleToast } from './WebToasts';
 import { Group, NOTIFICATION_KINDS, Row, ToggleRow } from './SettingsScreen';
 
 // Innstillinger → Personlige varsler: which notifications this phone gets (stored per phone on the server).
@@ -14,6 +14,7 @@ export default function VarslerScreen() {
   // undefined = loading, null = this device gets no notifications (website, or notifications not allowed).
   const [push, setPush] = useState(undefined); // { token, prefs }
   const [testState, setTestState] = useState(null); // null | 'sending' | text after sending
+  const [sound, setSound] = useState(getWebSound); // website only: ding with each toast
 
   useEffect(() => {
     getPushToken()
@@ -81,8 +82,23 @@ export default function VarslerScreen() {
                 }
                 value={push.prefs.all !== false}
                 onChange={(v) => toggle('all', v)}
-                last
+                last={Platform.OS !== 'web'}
               />
+              {Platform.OS === 'web' ? (
+                <ToggleRow
+                  icon={sound ? 'volume-high-outline' : 'volume-mute-outline'}
+                  label="Lyd"
+                  detail="Et lite pling med hver melding i denne nettleseren"
+                  value={sound}
+                  onChange={(v) => {
+                    setWebSound(v);
+                    setSound(v);
+                    if (v) showExampleToast(); // a sample, so you hear what it sounds like
+                  }}
+                  disabled={push.prefs.all === false}
+                  last
+                />
+              ) : null}
             </Group>
             {/* One group per topic (Salg, Bookinger, Ansatte, Vær), in the order of NOTIFICATION_KINDS. */}
             {[...new Set(NOTIFICATION_KINDS.map((k) => k.group))].map((group) => {

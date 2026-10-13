@@ -34,12 +34,12 @@ assert.equal(bookingsText(1, 12), '🎉 Vi har 1 booking i dag · 👥 12 gjeste
 assert.equal(bookingsText(2, 34), '🎉 Vi har 2 bookinger i dag · 👥 34 gjester');
 assert.equal(dayLabel('2026-10-18'), 'søn 18. okt');
 
-const shift = { date: '2026-10-13', name: 'Mathea Hjulstad', group: 'Resepsjon', start: '09:50', end: '16:00', status: 'PunchclockFinished', punchIn: '09:48', punchOut: '16:02' };
-assert.deepEqual(punchInText(shift), { title: '👋 Mathea Hjulstad er på jobb', body: '⏰ Stemplet inn 09:48 · Resepsjon · vakt 09:50–16:00' });
+const shift = { date: '2026-10-13', name: 'Ola Nordmann', group: 'Resepsjon', start: '09:50', end: '16:00', status: 'PunchclockFinished', punchIn: '09:48', punchOut: '16:02' };
+assert.deepEqual(punchInText(shift), { title: '👋 Ola Nordmann er på jobb', body: '⏰ Stemplet inn 09:48 · Resepsjon · vakt 09:50–16:00' });
 assert.equal(punchInText({ ...shift, group: null }).body, '⏰ Stemplet inn 09:48 · vakt 09:50–16:00');
-assert.deepEqual(punchOutText(shift), { title: '🏁 Mathea Hjulstad har gått', body: '⏰ Stemplet ut 16:02 · Resepsjon · vakt 09:50–16:00' });
+assert.deepEqual(punchOutText(shift), { title: '🏁 Ola Nordmann har gått', body: '⏰ Stemplet ut 16:02 · Resepsjon · vakt 09:50–16:00' });
 assert.deepEqual(missingPunchText(shift, 12), {
-  title: '⚠️ Mathea Hjulstad har ikke stemplet inn',
+  title: '⚠️ Ola Nordmann har ikke stemplet inn',
   body: 'Resepsjon · vakt 09:50–16:00 · startet for 12 min siden',
 });
 

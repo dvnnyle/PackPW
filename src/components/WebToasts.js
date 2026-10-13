@@ -27,13 +27,59 @@ const STYLE = {
 const EXAMPLES = [
   { kind: 'hourly', title: '📈 Playworld Sørlandet', body: '💰 Totalt salg i dag: 8 412,50 kr' },
   { kind: 'newBooking', title: '🎈 Ny booking', body: 'lør 18. okt kl 12:30 · 👥 14 gjester · Fiestarommet + Lek' },
-  { kind: 'punchIn', title: '👋 Mathea Hjulstad er på jobb', body: '⏰ Stemplet inn 09:48 · Resepsjon · vakt 09:50–16:00' },
-  { kind: 'missingPunch', title: '⚠️ Henrik Eikså har ikke stemplet inn', body: 'Resepsjon · vakt 16:00–21:00 · startet for 10 min siden' },
+  { kind: 'punchIn', title: '👋 Ola Nordmann er på jobb', body: '⏰ Stemplet inn 09:48 · Resepsjon · vakt 09:50–16:00' },
+  { kind: 'missingPunch', title: '⚠️ Kari Nordmann har ikke stemplet inn', body: 'Resepsjon · vakt 16:00–21:00 · startet for 10 min siden' },
   { kind: 'bookingSoon', title: '⏰ Om 30 min: Fiestarommet + Lek', body: 'kl 12:30–14:30 · 👥 9 gjester · 🎂 1 bursdagsbarn' },
   { kind: 'weather', title: '🌧️ Regn i morgen', body: '☔ Ca. 6,4 mm regn i åpningstiden (10–21) – det kan bli travelt inne' },
   { kind: 'weekly', title: '📊 Uka er over', body: '💰 Totalt 142 300 kr · man 5. okt – søn 11. okt' },
   { kind: 'closing', title: '🌙 Stengt for i dag', body: '💰 Totalt salg i dag: 12 447,00 kr' },
 ];
+// ---------- sound: a short two-note "ding" made with the Web Audio API (no sound file) ----------
+// On/off per browser ("Lyd" on the Varsler page), remembered in localStorage; on by default.
+const SOUND_KEY = 'playworld-web-sound';
+export function getWebSound() {
+  try {
+    return globalThis.localStorage?.getItem(SOUND_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+export function setWebSound(on) {
+  try {
+    globalThis.localStorage?.setItem(SOUND_KEY, on ? 'on' : 'off');
+  } catch {
+    // storage blocked: the choice just isn't remembered
+  }
+}
+
+let audio = null;
+function ping(kind) {
+  if (Platform.OS !== 'web' || !getWebSound()) return;
+  try {
+    const AudioContext = globalThis.AudioContext ?? globalThis.webkitAudioContext;
+    if (!AudioContext) return;
+    audio ??= new AudioContext();
+    if (audio.state === 'suspended') audio.resume(); // browsers only allow sound after the page has been clicked
+    // A rising "ding-ding"; a falling one for warnings (missing punch-in).
+    const notes = kind === 'missingPunch' ? [784, 587] : [880, 1319];
+    notes.forEach((frequency, i) => {
+      const start = audio.currentTime + i * 0.13;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.2, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(start);
+      osc.stop(start + 0.5);
+    });
+  } catch {
+    // no audio available: toasts still show
+  }
+}
+
 const localListeners = new Set();
 let exampleIndex = 0;
 let localId = 0;
@@ -118,7 +164,10 @@ export default function WebToasts() {
         after.current = Math.max(after.current ?? 0, latest);
         const fresh = items.filter((n) => !shown.current.has(n.id));
         fresh.forEach((n) => shown.current.add(n.id));
-        if (fresh.length && !stopped) setToasts((t) => [...t, ...fresh].slice(-4));
+        if (fresh.length && !stopped) {
+          setToasts((t) => [...t, ...fresh].slice(-4));
+          ping(fresh[fresh.length - 1].kind);
+        }
       } catch {
         // offline or server restarting: try again on the next round
       } finally {
@@ -127,7 +176,10 @@ export default function WebToasts() {
     };
     poll();
     const timer = setInterval(poll, POLL_MS);
-    const onLocal = (toast) => setToasts((t) => [...t, toast].slice(-4));
+    const onLocal = (toast) => {
+      setToasts((t) => [...t, toast].slice(-4));
+      ping(toast.kind);
+    };
     localListeners.add(onLocal);
     return () => {
       stopped = true;
