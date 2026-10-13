@@ -53,6 +53,7 @@ function ToggleRow({ icon, label, detail, value, onChange, last }) {
         onValueChange={onChange}
         trackColor={{ true: colors.accent, false: colors.border }}
         thumbColor="#fff"
+        activeThumbColor="#fff"
         accessibilityLabel={label}
       />
     </View>
