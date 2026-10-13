@@ -13,7 +13,7 @@ import {
   weeklyText,
 } from './notifications';
 
-// 2026-10-08 is a Thursday (open 10–21), 2026-10-10 a Saturday (open 10–19), 2026-10-12 a Monday.
+// 2026-10-08 is a Thursday (open 10–21), 2026-10-10 a Saturday and 2026-10-11 a Sunday (open 10–19).
 assert.deepEqual(dueNotifications('2026-10-08', 9, 0), []);
 assert.deepEqual(dueNotifications('2026-10-08', 10, 0), ['bookings']);
 assert.deepEqual(dueNotifications('2026-10-08', 10, 1), []);
@@ -24,8 +24,10 @@ assert.deepEqual(dueNotifications('2026-10-08', 21, 0), []);
 assert.deepEqual(dueNotifications('2026-10-08', 21, 10), ['closing']);
 assert.deepEqual(dueNotifications('2026-10-10', 19, 0), []);
 assert.deepEqual(dueNotifications('2026-10-10', 19, 10), ['closing']);
-assert.deepEqual(dueNotifications('2026-10-12', 9, 0), ['weekly']);
-assert.deepEqual(dueNotifications('2026-10-13', 9, 0), []);
+assert.deepEqual(dueNotifications('2026-10-11', 19, 10), ['closing']);
+assert.deepEqual(dueNotifications('2026-10-11', 19, 15), ['weekly']);
+assert.deepEqual(dueNotifications('2026-10-10', 19, 15), []);
+assert.deepEqual(dueNotifications('2026-10-12', 9, 0), []);
 
 assert.equal(bookingsText(0, 0), '📭 Ingen bookinger i dag');
 assert.equal(bookingsText(1, 12), '🎉 Vi har 1 booking i dag · 👥 12 gjester');
@@ -55,6 +57,6 @@ assert.deepEqual(bookingSoonText(booking, 30), {
 });
 
 const plain = (t: string) => t.replace(/[\u00a0\u202f]/g, ' '); // Norwegian number formatting uses no-break spaces
-assert.equal(plain(weeklyText(110000, 100000)), '💰 110 000 kr · uka før 100 000 kr (+10 %)');
+assert.equal(plain(weeklyText(142300, '2026-10-05', '2026-10-11')), '💰 Totalt 142 300 kr · man 5. okt – søn 11. okt');
 assert.match(rainText(6.4, 10, 21), /^☔ Ca\. 6,4 mm regn i åpningstiden \(10–21\)/);
 console.log('notification checks ok');

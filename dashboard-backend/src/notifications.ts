@@ -9,7 +9,7 @@ import { openingHours } from './utils/norway';
 // The staff notifications for Playworld Sørlandet, checked once a minute (Norwegian time). Each phone only gets the
 // kinds it has switched on (Innstillinger → Varsler).
 // Sales:     bookings count at opening · total every full hour · final total after closing ·
-//            weekly summary on Monday morning
+//            the week's total on Sunday after closing (Monday–Sunday)
 // Bookings:  a new booking is made · a booking starts in 30 minutes
 // Staff:     someone punches in / out · a shift has started but nobody punched in
 // Weather:   rain expected tomorrow during opening hours
@@ -107,11 +107,9 @@ export function bookingSoonText(b: Booking, minutes: number): { title: string; b
   return { title: `⏰ Om ${minutes} min: ${b.name}`, body: `kl ${b.time}–${b.endTime} · 👥 ${b.guests} gjester${birthdays}` };
 }
 
-export function weeklyText(lastWeek: number, weekBefore: number): string {
-  const change = weekBefore > 0 ? ((lastWeek - weekBefore) / weekBefore) * 100 : null;
-  const changeText =
-    change == null ? '' : ` (${change >= 0 ? '+' : ''}${new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 1 }).format(change)} %)`;
-  return `💰 ${kroner(lastWeek, 0)} · uka før ${kroner(weekBefore, 0)}${changeText}`;
+// "💰 Totalt 142 300 kr · man 6. okt – søn 12. okt"
+export function weeklyText(total: number, monday: string, sunday: string): string {
+  return `💰 Totalt ${kroner(total, 0)} · ${dayLabel(monday)} – ${dayLabel(sunday)}`;
 }
 
 export function rainText(mm: number, open: number, close: number): string {
@@ -166,7 +164,7 @@ export function dueNotifications(date: string, hour: number, minute: number): Sc
   if (hour === open && minute === 0) due.push('bookings');
   if (hour > open && hour < close && minute === 0) due.push('hourly');
   if (hour === close && minute === CLOSING_DELAY_MIN) due.push('closing');
-  if (weekday(date) === 1 && hour === 9 && minute === 0) due.push('weekly');
+  if (weekday(date) === 0 && hour === close && minute === CLOSING_DELAY_MIN + 5) due.push('weekly'); // after Sunday's closing
   if (hour === 18 && minute === 0) due.push('weather');
   return due;
 }
@@ -185,12 +183,11 @@ async function sendScheduled(kind: Scheduled, date: string) {
       saveHistory();
     }
   } else if (kind === 'weekly') {
-    const sum = async (from: string) => {
-      const totals = await Promise.all(Array.from({ length: 7 }, (_, i) => dayTotal(addDays(from, i))));
-      return totals.reduce<number>((a, b) => a + (b ?? 0), 0);
-    };
-    const [lastWeek, weekBefore] = await Promise.all([sum(addDays(date, -7)), sum(addDays(date, -14))]);
-    await sendPush('📊 Forrige uke', weeklyText(lastWeek, weekBefore), 'weekly');
+    // Monday–Sunday of the week that just ended (`date` is the Sunday; its total was stored at closing).
+    const monday = addDays(date, -6);
+    const totals = await Promise.all(Array.from({ length: 7 }, (_, i) => dayTotal(addDays(monday, i))));
+    const total = totals.reduce<number>((a, b) => a + (b ?? 0), 0);
+    await sendPush('📊 Uka er over', weeklyText(total, monday, date), 'weekly');
   } else if (kind === 'weather') {
     const tomorrow = addDays(date, 1);
     const { open, close } = openingHours(tomorrow);

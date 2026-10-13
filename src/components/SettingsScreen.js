@@ -33,7 +33,7 @@ export function Group({ title, children }) {
 export const NOTIFICATION_KINDS = [
   { group: 'Salg', key: 'hourly', icon: 'trending-up-outline', label: 'Salg hver time', detail: 'Totalt salg så langt i dag, hver hele time' },
   { group: 'Salg', key: 'closing', icon: 'moon-outline', label: 'Dagens salg ved stenging', detail: 'Sluttsummen 10 minutter etter stenging' },
-  { group: 'Salg', key: 'weekly', icon: 'bar-chart-outline', label: 'Ukesoppsummering', detail: 'Mandag kl 09: forrige uke mot uka før' },
+  { group: 'Salg', key: 'weekly', icon: 'bar-chart-outline', label: 'Ukens omsetning', detail: 'Søndag etter stenging: totalt for uka (man–søn)' },
   { group: 'Bookinger', key: 'bookings', icon: 'calendar-outline', label: 'Bookinger i dag', detail: 'Ved åpning: antall bookinger og gjester' },
   { group: 'Bookinger', key: 'newBooking', icon: 'balloon-outline', label: 'Ny booking', detail: 'Når noen booker i FunButler (neste 30 dager)' },
   { group: 'Bookinger', key: 'bookingSoon', icon: 'alarm-outline', label: 'Booking om 30 min', detail: 'Påminnelse før hver booking starter' },
