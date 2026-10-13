@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Head from 'expo-router/head';
+import { usePathname } from 'expo-router';
 import { Tabs, TabList, TabSlot, TabTrigger } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -40,12 +41,17 @@ const TABS = [
   { name: 'vaer', href: '/vaer', label: 'Været', icon: 'partly-sunny' },
   { name: 'innstillinger', href: '/innstillinger', label: 'Innstillinger', icon: 'settings' },
 ];
+// Pages that aren't in the menu (opened from another page); registered as hidden tabs.
+const HIDDEN_TABS = [{ name: 'varsler', href: '/varsler' }];
 // Phone bottom bar: Oversikt in the middle of the five. The desktop top bar keeps the order above.
 const BOTTOM_TABS = ['bookinger', 'statistikk', 'index', 'vaer', 'innstillinger'].map((n) => TABS.find((t) => t.name === n));
 
 // One menu item; a pill in the desktop top bar, a bottom-bar button on mobile.
 // On the phone, Oversikt (the middle tab) sits in a raised blue circle.
-function NavButton({ tab, desktop, isFocused, onPress, ...props }) {
+function NavButton({ tab, desktop, isFocused: tabFocused, onPress, ...props }) {
+  // Pages opened from Innstillinger (Varsler) keep Innstillinger highlighted.
+  const path = usePathname();
+  const isFocused = tabFocused || (tab.name === 'innstillinger' && path === '/varsler');
   const color = isFocused ? colors.accent : colors.muted;
   const featured = !desktop && tab.name === 'index';
   // A short vibration on the phone: a tick for the tabs, a firmer tap for the rocket.
@@ -156,7 +162,7 @@ export default function RootLayout() {
         {/* Expo Router needs the TabList as a direct child of Tabs to register the routes;
             it's hidden so the menu can be laid out differently on desktop and mobile. */}
         <TabList style={styles.hidden}>
-          {TABS.map((tab) => (
+          {[...TABS, ...HIDDEN_TABS].map((tab) => (
             <TabTrigger key={tab.name} name={tab.name} href={tab.href} />
           ))}
         </TabList>

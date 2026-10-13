@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { fetchHealth, fetchPushPrefs, savePushPrefs, sendTestPush } from '../api';
-import { getPushToken } from '../push';
+import { router } from 'expo-router';
+import { fetchHealth } from '../api';
 import { cardShadow, colors, fonts } from '../theme';
 import { logos } from '../logos';
 import { canSelfUpdate, checkForUpdate, fromPlayStore, installedVersion, versionLabel } from '../updates';
@@ -19,7 +19,7 @@ const SOURCES = [
   { logo: logos.yr, name: 'yr', detail: 'Værdata fra MET Norway', url: 'https://www.yr.no/nb/s%C3%B8k?q=Kristiansand' },
 ];
 
-function Group({ title, children }) {
+export function Group({ title, children }) {
   return (
     <View style={styles.group}>
       <Text style={styles.groupTitle}>{title}</Text>
@@ -30,7 +30,7 @@ function Group({ title, children }) {
 
 // One settings row: icon or logo, label, optional detail under it, and a value or chevron on the right.
 // The notifications a phone can switch on or off (stored per phone on the server).
-const NOTIFICATION_KINDS = [
+export const NOTIFICATION_KINDS = [
   { key: 'bookings', icon: 'calendar-outline', label: 'Bookinger i dag', detail: 'Ved åpning: antall bookinger og gjester' },
   { key: 'hourly', icon: 'trending-up-outline', label: 'Salg hver time', detail: 'Totalt salg så langt i dag, hver hele time' },
   { key: 'closing', icon: 'moon-outline', label: 'Dagens salg ved stenging', detail: 'Sluttsummen 10 minutter etter stenging' },
@@ -38,7 +38,7 @@ const NOTIFICATION_KINDS = [
 ];
 
 // A settings row with an on/off switch.
-function ToggleRow({ icon, label, detail, value, onChange, last }) {
+export function ToggleRow({ icon, label, detail, value, onChange, last }) {
   return (
     <View style={[styles.row, !last && styles.rowDivider]}>
       <View style={styles.rowIcon}>
@@ -60,7 +60,7 @@ function ToggleRow({ icon, label, detail, value, onChange, last }) {
   );
 }
 
-function Row({ icon, logo, label, detail, value, valueColor, onPress, last, busy, disabled }) {
+export function Row({ icon, logo, label, detail, value, valueColor, onPress, last, busy, disabled }) {
   const content = (
     <>
       {logo ? (
@@ -111,35 +111,6 @@ export default function SettingsScreen() {
   const [update, setUpdate] = useState(null);
   const [health, setHealth] = useState(null); // { ok, ms }
   const { logout } = useAuth();
-  const [pushState, setPushState] = useState(null); // null | 'sending' | text after sending
-  // This phone's notification choices: undefined = loading, null = this device gets no notifications.
-  const [push, setPush] = useState(undefined); // { token, prefs }
-
-  useEffect(() => {
-    getPushToken()
-      .then((token) => (token ? fetchPushPrefs(token).then((prefs) => setPush({ token, prefs })) : setPush(null)))
-      .catch(() => setPush(null));
-  }, []);
-
-  // Switches flip at once; the server's answer (or the old value, if saving fails) follows.
-  const togglePush = (key, value) => {
-    const before = push;
-    setPush({ ...push, prefs: { ...push.prefs, [key]: value } });
-    savePushPrefs(push.token, { [key]: value })
-      .then((prefs) => setPush((p) => (p ? { ...p, prefs } : p)))
-      .catch(() => setPush(before));
-  };
-
-  const testPush = async () => {
-    setPushState('sending');
-    try {
-      const { phones } = await sendTestPush();
-      setPushState(`Sendt til ${phones} ${phones === 1 ? 'telefon' : 'telefoner'}`);
-    } catch {
-      setPushState('Kunne ikke sende testvarsel');
-    }
-  };
-
   // `health` starts as null (checking); pressing the Status row checks again.
   useEffect(() => {
     timeHealthCheck().then(setHealth);
@@ -218,33 +189,13 @@ export default function SettingsScreen() {
         </Group>
 
         <Group title="Varsler">
-          {push
-            ? NOTIFICATION_KINDS.map((k) => (
-                <ToggleRow
-                  key={k.key}
-                  icon={k.icon}
-                  label={k.label}
-                  detail={k.detail}
-                  value={push.prefs[k.key] !== false}
-                  onChange={(v) => togglePush(k.key, v)}
-                />
-              ))
-            : null}
-          {push === null ? (
-            <Row
-              icon="notifications-off-outline"
-              label="Ingen varsler på denne enheten"
-              detail="Bare i appen på telefonen, med varsler tillatt i telefonens innstillinger"
-            />
-          ) : null}
-            <Row
-              icon="notifications-outline"
-              label="Send testvarsel"
-              detail={pushState && pushState !== 'sending' ? pushState : 'Sender et varsel til alle telefoner med appen'}
-              onPress={testPush}
-              busy={pushState === 'sending'}
-              last
-            />
+          <Row
+            icon="notifications-outline"
+            label="Personlige varsler"
+            detail="Velg hvilke varsler denne telefonen får"
+            onPress={() => router.navigate('/varsler')}
+            last
+          />
         </Group>
 
         <Group title="Datakilder">
