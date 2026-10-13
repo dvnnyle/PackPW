@@ -36,8 +36,10 @@ export const KINDS = [
   'weather',
 ] as const;
 export type Kind = (typeof KINDS)[number];
-type Prefs = Record<Kind, boolean>;
-const allOn = (): Prefs => Object.fromEntries(KINDS.map((k) => [k, true])) as Prefs;
+// `all` is the main switch ("Alle varsler"): off = nothing at all, while the per-kind choices are kept for later.
+type Prefs = Record<Kind, boolean> & { all: boolean };
+const allOn = (): Prefs => ({ ...(Object.fromEntries(KINDS.map((k) => [k, true])) as Record<Kind, boolean>), all: true });
+const wants = (prefs: Prefs, kind: Kind | null | undefined) => prefs.all !== false && (!kind || prefs[kind]);
 
 // File format: { token: prefs }. Older files were a plain list of tokens; those phones get everything.
 function load(): Map<string, Prefs> {
@@ -66,7 +68,7 @@ function save() {
 export async function sendPush(title: string, body: string, kind?: Kind): Promise<number> {
   recent.push({ id: ++lastId, at: new Date().toISOString(), kind: kind ?? null, title, body });
   if (recent.length > RECENT_MAX) recent.shift();
-  const all = [...phones].filter(([token, prefs]) => isPhone(token) && (!kind || prefs[kind])).map(([token]) => token);
+  const all = [...phones].filter(([token, prefs]) => isPhone(token) && wants(prefs, kind)).map(([token]) => token);
   for (let i = 0; i < all.length; i += 100) {
     const batch = all.slice(i, i + 100);
     const response = await fetch(EXPO_PUSH_URL, {
@@ -143,8 +145,8 @@ router.put('/prefs', (req, res) => {
     res.status(404).json({ error: 'Unknown phone' });
     return;
   }
-  for (const kind of KINDS) {
-    if (typeof req.body?.prefs?.[kind] === 'boolean') current[kind] = req.body.prefs[kind];
+  for (const key of [...KINDS, 'all'] as const) {
+    if (typeof req.body?.prefs?.[key] === 'boolean') current[key] = req.body.prefs[key];
   }
   save();
   res.json(current);
@@ -156,7 +158,7 @@ router.get('/recent', (req, res) => {
   const prefs = typeof req.query.token === 'string' ? phones.get(req.query.token) : undefined;
   const after = Number(req.query.after);
   const items = Number.isFinite(after) && req.query.after !== undefined
-    ? recent.filter((n) => n.id > after && (!n.kind || !prefs || prefs[n.kind]))
+    ? recent.filter((n) => n.id > after && (!prefs || wants(prefs, n.kind)))
     : [];
   res.json({ latest: lastId, items });
 });

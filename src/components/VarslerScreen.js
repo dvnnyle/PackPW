@@ -68,8 +68,24 @@ export default function VarslerScreen() {
             />
           </Group>
         ) : push ? (
-          // One group per topic (Salg, Bookinger, Ansatte, Vær), in the order of NOTIFICATION_KINDS.
-          [...new Set(NOTIFICATION_KINDS.map((k) => k.group))].map((group) => {
+          <>
+            {/* Main switch: off = nothing at all; the choices below are kept and come back when it's turned on. */}
+            <Group title="Alle varsler">
+              <ToggleRow
+                icon={push.prefs.all !== false ? 'notifications' : 'notifications-off-outline'}
+                label="Varsler på"
+                detail={
+                  push.prefs.all !== false
+                    ? 'Slå av for å stoppe alle varsler'
+                    : 'Alle varsler er av · valgene under huskes til du slår på igjen'
+                }
+                value={push.prefs.all !== false}
+                onChange={(v) => toggle('all', v)}
+                last
+              />
+            </Group>
+            {/* One group per topic (Salg, Bookinger, Ansatte, Vær), in the order of NOTIFICATION_KINDS. */}
+            {[...new Set(NOTIFICATION_KINDS.map((k) => k.group))].map((group) => {
             const kinds = NOTIFICATION_KINDS.filter((k) => k.group === group);
             return (
               <Group key={group} title={group}>
@@ -82,11 +98,13 @@ export default function VarslerScreen() {
                     value={push.prefs[k.key] !== false}
                     onChange={(v) => toggle(k.key, v)}
                     last={i === kinds.length - 1}
+                    disabled={push.prefs.all === false}
                   />
                 ))}
               </Group>
             );
-          })
+          })}
+          </>
         ) : null}
 
         <Group title="Test">

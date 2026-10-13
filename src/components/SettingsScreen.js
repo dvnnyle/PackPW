@@ -44,9 +44,9 @@ export const NOTIFICATION_KINDS = [
 ];
 
 // A settings row with an on/off switch.
-export function ToggleRow({ icon, label, detail, value, onChange, last }) {
+export function ToggleRow({ icon, label, detail, value, onChange, last, disabled }) {
   return (
-    <View style={[styles.row, !last && styles.rowDivider]}>
+    <View style={[styles.row, !last && styles.rowDivider, disabled && styles.rowOff]}>
       <View style={styles.rowIcon}>
         <Ionicons name={icon} size={18} color={colors.accent} />
       </View>
@@ -57,6 +57,7 @@ export function ToggleRow({ icon, label, detail, value, onChange, last }) {
       <Switch
         value={value}
         onValueChange={onChange}
+        disabled={disabled}
         trackColor={{ true: colors.accent, false: colors.border }}
         thumbColor="#fff"
         activeThumbColor="#fff"
@@ -275,6 +276,7 @@ const styles = StyleSheet.create({
   rowDetail: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   rowValue: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted },
   disabled: { color: colors.muted },
+  rowOff: { opacity: 0.4 },
   logout: {
     flexDirection: 'row',
     alignItems: 'center',
