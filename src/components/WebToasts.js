@@ -23,6 +23,25 @@ const STYLE = {
   null: { icon: 'notifications', color: '#a78bfa' },
 };
 
+// Toasts shown only in this browser (the "Vis testmelding her" button): one example of each kind, in turn.
+const EXAMPLES = [
+  { kind: 'hourly', title: '📈 Playworld Sørlandet', body: '💰 Totalt salg i dag: 8 412,50 kr' },
+  { kind: 'newBooking', title: '🎈 Ny booking', body: 'lør 18. okt kl 12:30 · 👥 14 gjester · Fiestarommet + Lek' },
+  { kind: 'punchIn', title: '👋 Mathea Hjulstad er på jobb', body: '⏰ Stemplet inn 09:48 · Resepsjon · vakt 09:50–16:00' },
+  { kind: 'missingPunch', title: '⚠️ Henrik Eikså har ikke stemplet inn', body: 'Resepsjon · vakt 16:00–21:00 · startet for 10 min siden' },
+  { kind: 'bookingSoon', title: '⏰ Om 30 min: Fiestarommet + Lek', body: 'kl 12:30–14:30 · 👥 9 gjester · 🎂 1 bursdagsbarn' },
+  { kind: 'weather', title: '🌧️ Regn i morgen', body: '☔ Ca. 6,4 mm regn i åpningstiden (10–21) – det kan bli travelt inne' },
+  { kind: 'weekly', title: '📊 Uka er over', body: '💰 Totalt 142 300 kr · man 5. okt – søn 11. okt' },
+  { kind: 'closing', title: '🌙 Stengt for i dag', body: '💰 Totalt salg i dag: 12 447,00 kr' },
+];
+const localListeners = new Set();
+let exampleIndex = 0;
+let localId = 0;
+export function showExampleToast() {
+  const example = EXAMPLES[exampleIndex++ % EXAMPLES.length];
+  localListeners.forEach((listener) => listener({ ...example, id: `local-${++localId}` }));
+}
+
 // One toast: slides in from the left, a bar along the bottom shows how long it stays, slides out when closed.
 function Toast({ toast, onDone }) {
   const { icon, color } = STYLE[toast.kind] ?? STYLE.null;
@@ -108,9 +127,12 @@ export default function WebToasts() {
     };
     poll();
     const timer = setInterval(poll, POLL_MS);
+    const onLocal = (toast) => setToasts((t) => [...t, toast].slice(-4));
+    localListeners.add(onLocal);
     return () => {
       stopped = true;
       clearInterval(timer);
+      localListeners.delete(onLocal);
     };
   }, []);
 

@@ -6,6 +6,7 @@ import { fetchPushPrefs, savePushPrefs, sendTestPush } from '../api';
 import { getPushToken } from '../push';
 import { colors, fonts } from '../theme';
 import PageHeader from './PageHeader';
+import { showExampleToast } from './WebToasts';
 import { Group, NOTIFICATION_KINDS, Row, ToggleRow } from './SettingsScreen';
 
 // Innstillinger → Personlige varsler: which notifications this phone gets (stored per phone on the server).
@@ -89,6 +90,14 @@ export default function VarslerScreen() {
         ) : null}
 
         <Group title="Test">
+          {Platform.OS === 'web' ? (
+            <Row
+              icon="eye-outline"
+              label="Vis testmelding her"
+              detail="Bare i denne nettleseren · et nytt eksempel for hvert trykk"
+              onPress={showExampleToast}
+            />
+          ) : null}
           <Row
             icon="paper-plane-outline"
             label="Send testvarsel"
