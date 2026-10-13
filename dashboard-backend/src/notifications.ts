@@ -42,8 +42,8 @@ const todaysDashboard = (fresh: boolean) =>
 const totalSales = (d: DashboardData) => (d.serviceA?.revenueToday ?? 0) + (d.serviceB?.salesToday ?? 0);
 
 export function bookingsText(count: number, guests: number): string {
-  if (count === 0) return 'Ingen bookinger i dag';
-  return `Vi har ${count} ${count === 1 ? 'booking' : 'bookinger'} i dag · ${guests} gjester`;
+  if (count === 0) return '📭 Ingen bookinger i dag';
+  return `🎉 Vi har ${count} ${count === 1 ? 'booking' : 'bookinger'} i dag · 👥 ${guests} gjester`;
 }
 
 // Which notification (if any) is due at this minute.
@@ -64,9 +64,9 @@ async function sendDue() {
   if (due === 'bookings') {
     await sendPush('God morgen! ☀️', bookingsText(data.today?.bookingCount ?? 0, data.today?.guestCount ?? 0), 'bookings');
   } else if (due === 'hourly') {
-    await sendPush('Playworld Sørlandet', `Totalt salg i dag: ${kroner(totalSales(data))}`, 'hourly');
+    await sendPush('📈 Playworld Sørlandet', `💰 Totalt salg i dag: ${kroner(totalSales(data))}`, 'hourly');
   } else {
-    await sendPush('Stengt for i dag', `Totalt salg i dag: ${kroner(totalSales(data))}`, 'closing');
+    await sendPush('🌙 Stengt for i dag', `💰 Totalt salg i dag: ${kroner(totalSales(data))}`, 'closing');
   }
   console.log(`[notifications] Sent ${due} (${date} ${hour}:${String(minute).padStart(2, '0')})`);
 }
@@ -78,7 +78,7 @@ let seenDate = '';
 
 export function punchInText(shift: StaffShift): { title: string; body: string } {
   const shiftInfo = `${shift.group ? `${shift.group} · ` : ''}vakt ${shift.start}–${shift.end}`;
-  return { title: `${shift.name} er på jobb`, body: `Stemplet inn ${shift.punchIn} · ${shiftInfo}` };
+  return { title: `👋 ${shift.name} er på jobb`, body: `⏰ Stemplet inn ${shift.punchIn} · ${shiftInfo}` };
 }
 
 async function checkPunchIns() {
