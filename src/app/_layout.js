@@ -25,6 +25,7 @@ import { LocationProvider } from '../location';
 import { RefreshProvider } from '../refresh';
 import RefreshButton from '../components/RefreshButton';
 import LoginScreen from '../components/LoginScreen';
+import WebToasts from '../components/WebToasts';
 import { AuthProvider, useAuth } from '../auth';
 
 // Keep the splash screen up until the fonts are loaded.
@@ -93,7 +94,12 @@ function AuthGate({ children }) {
       </>
     );
   }
-  return children;
+  return (
+    <>
+      {children}
+      <WebToasts />
+    </>
+  );
 }
 
 export default function RootLayout() {

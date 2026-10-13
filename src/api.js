@@ -152,6 +152,16 @@ export async function savePushPrefs(token, prefs) {
   return response.json();
 }
 
+// Notifications sent after `after` that this phone/browser wants → { latest, items: [{ id, at, kind, title, body }] }
+export async function fetchRecentNotifications(token, after) {
+  const query = `token=${encodeURIComponent(token)}${after != null ? `&after=${after}` : ''}`;
+  const response = await fetch(`${API_URL}/api/push/recent?${query}`, {
+    headers: authToken ? { authorization: `Bearer ${authToken}` } : undefined,
+  });
+  if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+  return response.json();
+}
+
 // Sends a test notification to every registered phone → { ok, phones }
 export function sendTestPush() {
   return postJson('/api/push/test', {});

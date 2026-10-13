@@ -21,13 +21,35 @@ if (Platform.OS !== 'web') {
 // the first registration, so a screen opened right after login doesn't wrongly see "no notifications".
 let resolveToken;
 const tokenPromise = new Promise((resolve) => (resolveToken = resolve));
-// Local development on the web (localhost:8081) gets a stand-in token, so the Varsler switches can be seen and tried
-// without a phone. The real website has no push notifications.
-const WEB_PREVIEW_TOKEN = 'ExponentPushToken[webPreview]';
+// On the website there's no push: the browser gets its own id ("web:…", kept in localStorage) so it has its own
+// Varsler choices, and the same notifications are shown as toasts while the site is open (WebToasts).
+const WEB_ID_KEY = 'playworld-web-id';
+function webId() {
+  try {
+    let id = globalThis.localStorage?.getItem(WEB_ID_KEY);
+    if (!id) {
+      id = `web:${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+      globalThis.localStorage?.setItem(WEB_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return null; // storage blocked (private mode): no toasts or choices
+  }
+}
+
+let webIdPromise = null;
 export const getPushToken = () => {
   if (Platform.OS !== 'web') return tokenPromise;
-  if (!__DEV__) return Promise.resolve(null);
-  return registerPushToken(WEB_PREVIEW_TOKEN).then(() => WEB_PREVIEW_TOKEN);
+  webIdPromise ??= (async () => {
+    const id = webId();
+    if (!id) return null;
+    await registerPushToken(id);
+    return id;
+  })().catch(() => {
+    webIdPromise = null; // try again next time
+    return null;
+  });
+  return webIdPromise;
 };
 
 export function registerForPush() {

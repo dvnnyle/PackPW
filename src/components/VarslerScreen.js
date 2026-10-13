@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { fetchPushPrefs, savePushPrefs, sendTestPush } from '../api';
@@ -47,14 +47,22 @@ export default function VarslerScreen() {
           <Text style={styles.backText}>Innstillinger</Text>
         </Pressable>
 
-        <PageHeader title="Varsler" subtitle="Velg hva denne telefonen får" icon="notifications-outline" />
+        <PageHeader
+          title="Varsler"
+          subtitle={Platform.OS === 'web' ? 'Vises som meldinger mens nettsiden er åpen' : 'Velg hva denne telefonen får'}
+          icon="notifications-outline"
+        />
 
         {push === null ? (
           <Group title="Denne enheten">
             <Row
               icon="notifications-off-outline"
               label="Ingen varsler på denne enheten"
-              detail="Bare i appen på telefonen, med varsler tillatt i telefonens innstillinger"
+              detail={
+                Platform.OS === 'web'
+                  ? 'Nettleseren tillater ikke lagring (privat vindu?)'
+                  : 'Tillat varsler for Playworld Hub i telefonens innstillinger'
+              }
               last
             />
           </Group>

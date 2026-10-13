@@ -11,6 +11,16 @@ const TOKENS_FILE = path.resolve(process.env.PUSH_TOKENS_FILE ?? 'data/push-toke
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const EXPO_RECEIPTS_URL = 'https://exp.host/--/api/v2/push/getReceipts';
 const TOKEN_PATTERN = /^Expo(nent)?PushToken\[[\w-]+\]$/;
+// Browsers on the website register a made-up "web:…" id instead: they get no push, but have their own choices and
+// read the same notifications from /api/push/recent to show them as toasts while the site is open.
+const WEB_ID_PATTERN = /^web:[\w-]{8,64}$/;
+const isPhone = (token: string) => TOKEN_PATTERN.test(token);
+
+// The latest notifications, for the website's toasts (in memory; a restart just starts a new list).
+type Recent = { id: number; at: string; kind: Kind | null; title: string; body: string };
+const recent: Recent[] = [];
+let lastId = 0;
+const RECENT_MAX = 50;
 
 // The kinds of notification (see notifications.ts). New phones get all of them.
 export const KINDS = [
@@ -54,7 +64,9 @@ function save() {
 // Sends one notification to every registered phone that wants this kind (no kind = everyone, e.g. the test).
 // Tokens Expo reports as gone (app uninstalled) are dropped. Returns how many phones it was sent to.
 export async function sendPush(title: string, body: string, kind?: Kind): Promise<number> {
-  const all = [...phones].filter(([, prefs]) => !kind || prefs[kind]).map(([token]) => token);
+  recent.push({ id: ++lastId, at: new Date().toISOString(), kind: kind ?? null, title, body });
+  if (recent.length > RECENT_MAX) recent.shift();
+  const all = [...phones].filter(([token, prefs]) => isPhone(token) && (!kind || prefs[kind])).map(([token]) => token);
   for (let i = 0; i < all.length; i += 100) {
     const batch = all.slice(i, i + 100);
     const response = await fetch(EXPO_PUSH_URL, {
@@ -101,14 +113,14 @@ const router = Router();
 // POST /api/push/register { token } — called by the app after login.
 router.post('/register', (req, res) => {
   const token = req.body?.token;
-  if (typeof token !== 'string' || !TOKEN_PATTERN.test(token)) {
+  if (typeof token !== 'string' || !(TOKEN_PATTERN.test(token) || WEB_ID_PATTERN.test(token))) {
     res.status(400).json({ error: 'Invalid push token' });
     return;
   }
   if (!phones.has(token)) {
     phones.set(token, allOn());
     save();
-    console.log(`[push] New phone registered (${phones.size} in total)`);
+    console.log(`[push] New ${isPhone(token) ? 'phone' : 'browser'} registered (${phones.size} in total)`);
   }
   res.json({ ok: true });
 });
@@ -136,6 +148,17 @@ router.put('/prefs', (req, res) => {
   }
   save();
   res.json(current);
+});
+
+// GET /api/push/recent?token=…&after=<id> → { latest, items }: notifications sent after `after` that this phone or
+// browser wants. Without `after` (the website just opened) only `latest` comes back, so old ones aren't shown.
+router.get('/recent', (req, res) => {
+  const prefs = typeof req.query.token === 'string' ? phones.get(req.query.token) : undefined;
+  const after = Number(req.query.after);
+  const items = Number.isFinite(after) && req.query.after !== undefined
+    ? recent.filter((n) => n.id > after && (!n.kind || !prefs || prefs[n.kind]))
+    : [];
+  res.json({ latest: lastId, items });
 });
 
 // POST /api/push/test — the "Send testvarsel" button in Innstillinger.
