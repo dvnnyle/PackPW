@@ -132,6 +132,26 @@ export function registerPushToken(token) {
   return postJson('/api/push/register', { token });
 }
 
+// This phone's notification choices → { bookings, hourly, closing, punchIn }
+export async function fetchPushPrefs(token) {
+  const response = await fetch(`${API_URL}/api/push/prefs?token=${encodeURIComponent(token)}`, {
+    headers: authToken ? { authorization: `Bearer ${authToken}` } : undefined,
+  });
+  if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+  return response.json();
+}
+
+// Saves some of this phone's notification choices → all of them
+export async function savePushPrefs(token, prefs) {
+  const response = await fetch(`${API_URL}/api/push/prefs`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json', ...(authToken ? { authorization: `Bearer ${authToken}` } : {}) },
+    body: JSON.stringify({ token, prefs }),
+  });
+  if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+  return response.json();
+}
+
 // Sends a test notification to every registered phone → { ok, phones }
 export function sendTestPush() {
   return postJson('/api/push/test', {});

@@ -17,8 +17,18 @@ if (Platform.OS !== 'web') {
   });
 }
 
-export async function registerForPush() {
-  if (Platform.OS === 'web') return;
+// This phone's Expo push token once registration has finished (null on the web or without permission). Waits for
+// the first registration, so a screen opened right after login doesn't wrongly see "no notifications".
+let resolveToken;
+const tokenPromise = new Promise((resolve) => (resolveToken = resolve));
+export const getPushToken = () => (Platform.OS === 'web' ? Promise.resolve(null) : tokenPromise);
+
+export function registerForPush() {
+  return register().then((token) => (resolveToken(token), token));
+}
+
+async function register() {
+  if (Platform.OS === 'web') return null;
   try {
     const Notifications = require('expo-notifications');
     if (Platform.OS === 'android') {
@@ -33,11 +43,13 @@ export async function registerForPush() {
       await Notifications.deleteNotificationChannelAsync('default').catch(() => {});
     }
     const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== 'granted') return;
+    if (status !== 'granted') return null;
     const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     await registerPushToken(token);
+    return token;
   } catch (err) {
     console.warn('[push] Registration failed:', err?.message);
+    return null;
   }
 }

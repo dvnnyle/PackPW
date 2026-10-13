@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { fetchHealth, sendTestPush } from '../api';
+import { fetchHealth, fetchPushPrefs, savePushPrefs, sendTestPush } from '../api';
+import { getPushToken } from '../push';
 import { cardShadow, colors, fonts } from '../theme';
 import { logos } from '../logos';
 import { canSelfUpdate, checkForUpdate, fromPlayStore, installedVersion, versionLabel } from '../updates';
@@ -28,6 +29,36 @@ function Group({ title, children }) {
 }
 
 // One settings row: icon or logo, label, optional detail under it, and a value or chevron on the right.
+// The notifications a phone can switch on or off (stored per phone on the server).
+const NOTIFICATION_KINDS = [
+  { key: 'bookings', icon: 'calendar-outline', label: 'Bookinger i dag', detail: 'Ved åpning: antall bookinger og gjester' },
+  { key: 'hourly', icon: 'trending-up-outline', label: 'Salg hver time', detail: 'Totalt salg så langt i dag, hver hele time' },
+  { key: 'closing', icon: 'moon-outline', label: 'Dagens salg ved stenging', detail: 'Sluttsummen 10 minutter etter stenging' },
+  { key: 'punchIn', icon: 'person-add-outline', label: 'Ansatt stempler inn', detail: 'Når noen stempler inn i Planday' },
+];
+
+// A settings row with an on/off switch.
+function ToggleRow({ icon, label, detail, value, onChange, last }) {
+  return (
+    <View style={[styles.row, !last && styles.rowDivider]}>
+      <View style={styles.rowIcon}>
+        <Ionicons name={icon} size={18} color={colors.accent} />
+      </View>
+      <View style={styles.rowText}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ true: colors.accent, false: colors.border }}
+        thumbColor="#fff"
+        accessibilityLabel={label}
+      />
+    </View>
+  );
+}
+
 function Row({ icon, logo, label, detail, value, valueColor, onPress, last, busy, disabled }) {
   const content = (
     <>
@@ -80,6 +111,23 @@ export default function SettingsScreen() {
   const [health, setHealth] = useState(null); // { ok, ms }
   const { logout } = useAuth();
   const [pushState, setPushState] = useState(null); // null | 'sending' | text after sending
+  // This phone's notification choices: undefined = loading, null = this device gets no notifications.
+  const [push, setPush] = useState(undefined); // { token, prefs }
+
+  useEffect(() => {
+    getPushToken()
+      .then((token) => (token ? fetchPushPrefs(token).then((prefs) => setPush({ token, prefs })) : setPush(null)))
+      .catch(() => setPush(null));
+  }, []);
+
+  // Switches flip at once; the server's answer (or the old value, if saving fails) follows.
+  const togglePush = (key, value) => {
+    const before = push;
+    setPush({ ...push, prefs: { ...push.prefs, [key]: value } });
+    savePushPrefs(push.token, { [key]: value })
+      .then((prefs) => setPush((p) => (p ? { ...p, prefs } : p)))
+      .catch(() => setPush(before));
+  };
 
   const testPush = async () => {
     setPushState('sending');
@@ -169,6 +217,25 @@ export default function SettingsScreen() {
         </Group>
 
         <Group title="Varsler">
+          {push
+            ? NOTIFICATION_KINDS.map((k) => (
+                <ToggleRow
+                  key={k.key}
+                  icon={k.icon}
+                  label={k.label}
+                  detail={k.detail}
+                  value={push.prefs[k.key] !== false}
+                  onChange={(v) => togglePush(k.key, v)}
+                />
+              ))
+            : null}
+          {push === null ? (
+            <Row
+              icon="notifications-off-outline"
+              label="Ingen varsler på denne enheten"
+              detail="Bare i appen på telefonen, med varsler tillatt i telefonens innstillinger"
+            />
+          ) : null}
             <Row
               icon="notifications-outline"
               label="Send testvarsel"

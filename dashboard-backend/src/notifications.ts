@@ -1,12 +1,14 @@
 import { config } from './config';
 import { sendPush } from './push';
-import type { DashboardData } from './types';
+import type { DashboardData, StaffShift } from './types';
 import { openingHours, todayInNorway } from './utils/norway';
 
 // The staff notifications for Playworld Sørlandet, checked once a minute (Norwegian time):
 // - at opening time: how many bookings there are today
 // - every full hour while open: total sales so far today (Extanda Go + NordPay)
 // - 10 minutes after closing: the day's final total (a little later, so the last sales have reached the reports)
+// - when an employee punches in (Planday's punch clock, checked every minute between 06 and 23)
+// Each phone only gets the kinds it has switched on (Innstillinger → Varsler).
 const CLOSING_DELAY_MIN = 10;
 
 function osloClock(): { hour: number; minute: number } {
@@ -25,15 +27,17 @@ function osloClock(): { hour: number; minute: number } {
 // "12 447,00 kr"
 const kroner = (n: number) => `${new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} kr`;
 
-// Today's dashboard from our own API (the same cached numbers Oversikt shows; `fresh` fetches new ones).
-async function todaysDashboard(fresh: boolean): Promise<DashboardData> {
-  const response = await fetch(
-    `http://127.0.0.1:${config.port}/api/dashboard?date=${todayInNorway()}${fresh ? '&fresh=1' : ''}`,
-    { headers: config.apiKey ? { 'x-api-key': config.apiKey } : undefined },
-  );
-  if (!response.ok) throw new Error(`Dashboard returned ${response.status}`);
-  return (await response.json()) as DashboardData;
+// GET from our own API (the same cached data the app shows; `&fresh=1` in the path fetches new data).
+async function ownApi<T>(path: string): Promise<T> {
+  const response = await fetch(`http://127.0.0.1:${config.port}${path}`, {
+    headers: config.apiKey ? { 'x-api-key': config.apiKey } : undefined,
+  });
+  if (!response.ok) throw new Error(`${path.split('?')[0]} returned ${response.status}`);
+  return (await response.json()) as T;
 }
+
+const todaysDashboard = (fresh: boolean) =>
+  ownApi<DashboardData>(`/api/dashboard?date=${todayInNorway()}${fresh ? '&fresh=1' : ''}`);
 
 const totalSales = (d: DashboardData) => (d.serviceA?.revenueToday ?? 0) + (d.serviceB?.salesToday ?? 0);
 
@@ -58,13 +62,44 @@ async function sendDue() {
   if (!due) return;
   const data = await todaysDashboard(due === 'closing');
   if (due === 'bookings') {
-    await sendPush('God morgen! ☀️', bookingsText(data.today?.bookingCount ?? 0, data.today?.guestCount ?? 0));
+    await sendPush('God morgen! ☀️', bookingsText(data.today?.bookingCount ?? 0, data.today?.guestCount ?? 0), 'bookings');
   } else if (due === 'hourly') {
-    await sendPush('Playworld Sørlandet', `Totalt salg i dag: ${kroner(totalSales(data))}`);
+    await sendPush('Playworld Sørlandet', `Totalt salg i dag: ${kroner(totalSales(data))}`, 'hourly');
   } else {
-    await sendPush('Stengt for i dag', `Totalt salg i dag: ${kroner(totalSales(data))}`);
+    await sendPush('Stengt for i dag', `Totalt salg i dag: ${kroner(totalSales(data))}`, 'closing');
   }
   console.log(`[notifications] Sent ${due} (${date} ${hour}:${String(minute).padStart(2, '0')})`);
+}
+
+// Punch-ins already seen today ("name|start"). The first check after a restart or on a new day only records what's
+// there, so a deploy never re-announces everyone who's already at work.
+let seenPunchIns: Set<string> | null = null;
+let seenDate = '';
+
+export function punchInText(shift: StaffShift): { title: string; body: string } {
+  const shiftInfo = `${shift.group ? `${shift.group} · ` : ''}vakt ${shift.start}–${shift.end}`;
+  return { title: `${shift.name} er på jobb`, body: `Stemplet inn ${shift.punchIn} · ${shiftInfo}` };
+}
+
+async function checkPunchIns() {
+  const date = todayInNorway();
+  const { hour } = osloClock();
+  if (hour < 6 || hour > 23) return;
+  const { shifts } = await ownApi<{ shifts: StaffShift[] }>(`/api/staff?date=${date}&fresh=1`);
+  const punched = shifts.filter((s) => s.name && s.punchIn);
+  if (!seenPunchIns || seenDate !== date) {
+    seenPunchIns = new Set(punched.map((s) => `${s.name}|${s.start}`));
+    seenDate = date;
+    return;
+  }
+  for (const shift of punched) {
+    const key = `${shift.name}|${shift.start}`;
+    if (seenPunchIns.has(key)) continue;
+    seenPunchIns.add(key);
+    const { title, body } = punchInText(shift);
+    await sendPush(title, body, 'punchIn');
+    console.log(`[notifications] Sent punchIn (${shift.name} ${shift.punchIn})`);
+  }
 }
 
 let lastMinute = '';
@@ -76,5 +111,6 @@ export function startNotificationSchedule() {
     if (key === lastMinute) return;
     lastMinute = key;
     sendDue().catch((err) => console.error('[notifications] Failed:', (err as Error).message));
+    checkPunchIns().catch((err) => console.error('[notifications] Punch-in check failed:', (err as Error).message));
   }, 20_000);
 }
